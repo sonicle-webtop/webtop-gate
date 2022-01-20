@@ -7,6 +7,7 @@ ifeq ($(MODULES_FOLDER),)
 endif
 TARGET_WARS_DIR := $(WORKSPACE_DIR)/target-wars
 TARGET_SERVERS_DIR := $(WORKSPACE_DIR)/target-servers
+FILES_DIRNAME := files
 FILES_DIR := $(WORKSPACE_DIR)/files
 
 # ====================
@@ -218,6 +219,10 @@ setup: setup-modules setup-senchatools
 setup-senchatools:
 	@{ \
 	set -e; \
+	is_git=0; \
+	if [[ -f "$(WORKSPACE_DIR)/.git/config" ]]; then \
+		is_git=1; \
+	fi; \
 	version="$(DEFAULT_SENCHATOOLS_VERSION)"; \
 	if [[ "$(TARGET_SENCHATOOLS_VERSION)" != "" ]]; then \
 		version="$(TARGET_SENCHATOOLS_VERSION)"; \
@@ -229,12 +234,24 @@ setup-senchatools:
 		ossuffix="-linux"; \
 	fi; \
 	if [[ "$$version" == "" ]] || [[ "$$version" == "750" ]]; then \
+		wksp_filename="senchatools-workspace-750.tar.bz2"; \
+		cmd_filename="senchatools-cmd-750$$ossuffix.tar.bz2"; \
 		echo -e "$(cCYAN)[senchatools-750]$(cRESET)"; \
-		$(SUB-MAKE) __SENCHATOOLS_TGTFOLDERNAME="sencha-750" __SENCHATOOLS_WKSP_ARCHIVENAME="senchatools-workspace-750.tar.bz2" __SENCHATOOLS_CMD_OSARCHIVENAME="senchatools-cmd-750$$ossuffix.tar.bz2" __SENCHATOOLS_CMD_ARCHIVENAME="senchatools-cmd-750.tar.bz2" __SENCHATOOLS_TGTPROP="sencha75" __extract-senchatools; \
+		if [[ $$is_git -eq 1 ]]; then \
+			$(SUB-MAKE) __TARGET_FILE="$(FILES_DIRNAME)/$$wksp_filename" __gitlfs-pullpointer; \
+			$(SUB-MAKE) __TARGET_FILE="$(FILES_DIRNAME)/$$cmd_filename" __gitlfs-pullpointer; \
+		fi; \
+		$(SUB-MAKE) __SENCHATOOLS_TGTFOLDERNAME="sencha-750" __SENCHATOOLS_WKSP_ARCHIVENAME="$$wksp_filename" __SENCHATOOLS_CMD_ARCHIVENAME="$$cmd_filename" __SENCHATOOLS_TGTPROP="sencha75" __extract-senchatools; \
 	fi; \
 	if [[ "$$version" == "" ]] || [[ "$$version" == "620" ]]; then \
+		wksp_filename="senchatools-workspace-620.tar.bz2"; \
+		cmd_filename="senchatools-cmd-750$$ossuffix.tar.bz2"; \
 		echo -e "$(cCYAN)[senchatools-620]$(cRESET)"; \
-		$(SUB-MAKE) __SENCHATOOLS_TGTFOLDERNAME="sencha-620" __SENCHATOOLS_WKSP_ARCHIVENAME="senchatools-workspace-620.tar.bz2" __SENCHATOOLS_CMD_OSARCHIVENAME="senchatools-cmd-750$$ossuffix.tar.bz2" __SENCHATOOLS_CMD_ARCHIVENAME="senchatools-cmd-750.tar.bz2" __SENCHATOOLS_TGTPROP="sencha" __extract-senchatools; \
+		if [[ $$is_git -eq 1 ]]; then \
+			$(SUB-MAKE) __TARGET_FILE="$(FILES_DIRNAME)/$$wksp_filename" __gitlfs-pullpointer; \
+			$(SUB-MAKE) __TARGET_FILE="$(FILES_DIRNAME)/$$cmd_filename" __gitlfs-pullpointer; \
+		fi; \
+		$(SUB-MAKE) __SENCHATOOLS_TGTFOLDERNAME="sencha-620" __SENCHATOOLS_WKSP_ARCHIVENAME="$$wksp_filename" __SENCHATOOLS_CMD_ARCHIVENAME="$$cmd_filename" __SENCHATOOLS_TGTPROP="sencha" __extract-senchatools; \
 	fi; \
 	}
 
@@ -780,6 +797,29 @@ __module-checkonbranch:
 		exit 1; \
 	fi; \
 	cd ../..; \
+	}
+
+# Call me as sub-make
+.PHONY: __gitlfs-pullpointer
+__gitlfs-pullpointer:
+	@{ \
+	if [[ "$(__TARGET_FILE)" == "" ]]; then \
+		echo -e "Parameter variable '__TARGET_FILE' NOT defined"; \
+		exit 255; \
+	fi; \
+	if [[ ! -f "$(__TARGET_FILE)" ]]; then \
+		echo -e "File '$(__TARGET_FILE)' not exists"; \
+		exit 1; \
+	fi; \
+	$(GIT) lfs pointer --check --file "$(__TARGET_FILE)"; \
+	if [[ "$$?" -eq 0 ]]; then \
+		bfile=`basename $(__TARGET_FILE)`; \
+		echo -e "Pulling file '$$bfile'..."; \
+		$(GIT) lfs pull --include="$(__TARGET_FILE)"; \
+		if [[ "$$?" -ne 0 ]]; then \
+			exit $$?; \
+		fi; \
+	fi; \
 	}
 
 # Call me as sub-make
