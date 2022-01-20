@@ -5,7 +5,7 @@ This allows to prepare a building environment suitable for building all WebTop's
 ### Requirements
 
 - System with minimum 2GB of RAM and enough disk space
-- `Git SCM` (>= 2.20)
+- `Git SCM` (>= 2.20) with `Git LFS` support
 - `Maven` (>= 3.5.x, < 3.7)
 - `Java JDK` (= 1.8.x)
 - `NodeJS` (= 8.x)
