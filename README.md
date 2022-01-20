@@ -2,7 +2,18 @@
 
 This allows to prepare a building environment suitable for building all WebTop's repositories and produce the application war file for deployment.
 
-### Requirements
+## Cloning this repository
+
+This repository make use of LFS to store some heavy tools (around ~150MB) packed as archive files (see `files` folder).
+If you don't want to clone above archives right away, you need to invoke `git` command with specific variable:
+
+```
+GIT_LFS_SKIP_SMUDGE=1 git clone <this-repository-url>
+```
+
+LFS clone may already be skipped on system if `git-lfs` was originally installed with `--skip-smudge` option or if smudge configs were set as global.
+
+## Requirements
 
 - System with minimum 2GB of RAM and enough disk space
 - `Git SCM` (>= 2.20) with `Git LFS` support
@@ -11,7 +22,7 @@ This allows to prepare a building environment suitable for building all WebTop's
 - `NodeJS` (= 8.x)
 - `make`, `awk`, `tar`, `bzip2`, `grep`, `sed` commands available on system
 
-#### Fix JasperReports mirrors
+### Fix JasperReports mirrors
 
 In order to produce a successful build, you need to override default repository URLs defined in [Jasper-reports-maven-plugin](https://github.com/alexnederlof/Jasper-report-maven-plugin) with more recent ones.
 Please add the configuration below to your `settings.xml` file under your `.m2` home.
@@ -39,7 +50,7 @@ Please add the configuration below to your `settings.xml` file under your `.m2` 
 </settings>
 ```
 
-### Preparing your workspace
+## Preparing your workspace
 
 Target `setup-module` will help you to clone all modules into your workspace.
 
@@ -60,7 +71,7 @@ By default, current tools will be extracted under `sencha` sub-folder.
 
 NB: you can perform a one-time operation using only `setup` target.
 
-### Execute build
+## Execute build
 
 You can start building component modules by issuing the following command:
 
@@ -84,7 +95,7 @@ make servers-build
 
 NB: you can perform a one-time operation using only `build` target.
 
-### Build customization examples
+## Build customization examples
 
 *Provide new clone URL*
 
