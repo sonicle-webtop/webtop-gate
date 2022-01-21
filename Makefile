@@ -613,17 +613,33 @@ __module-merge:
 		echo -e "Variable '__SOURCE_BRANCH' is not defined"; \
 		exit 255; \
 	fi; \
-	if [[ "$($(__MODULE_FLAGS))" == *"git-$(__BASE_BRANCH)"* ]] && [[ "$($(__MODULE_FLAGS))" == *"git-$(__SOURCE_BRANCH)"* ]]; then \
+	src_branch=""; \
+	if [[ "$(__SOURCE_BRANCH)" == "release" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
+		src_branch="release"; \
+	elif [[ "$(__SOURCE_BRANCH)" == "develop" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
+		src_branch="develop"; \
+	elif [[ "$(__SOURCE_BRANCH)" == "master" ]]; then \
+		src_branch="master"; \
+	fi; \
+	dst_branch=""; \
+	if [[ "$(__BASE_BRANCH)" == "release" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
+		dst_branch="release"; \
+	elif [[ "$(__BASE_BRANCH)" == "develop" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
+		dst_branch="develop"; \
+	elif [[ "$(__BASE_BRANCH)" == "master" ]]; then \
+		dst_branch="master"; \
+	fi; \
+	if [[ src_branch != "" ]] && [[ dst_branch != "" ]]; then \
 		cd "$(MODULES_FOLDER)/$(__MODULE)"; \
-		$(GIT) checkout $(__SOURCE_BRANCH) && $(GIT) pull; \
+		$(GIT) checkout $$src_branch && $(GIT) pull; \
 		if [[ "$$?" -ne 0 ]]; then \
 			exit $$?; \
 		fi; \
-		$(GIT) checkout $(__BASE_BRANCH) && $(GIT) pull; \
+		$(GIT) checkout $$dst_branch && $(GIT) pull; \
 		if [[ "$$?" -ne 0 ]]; then \
 			exit $$?; \
 		fi; \
-		$(GIT) merge $(__SOURCE_BRANCH); \
+		$(GIT) merge $$src_branch; \
 		if [[ "$$?" -ne 0 ]]; then \
 			exit $$?; \
 		fi; \
@@ -746,10 +762,10 @@ __module-push:
 	else \
 		branch="$(__DEFAULT_BRANCH)"; \
 	fi; \
+	cd "$(MODULES_FOLDER)/$(__MODULE)"; \
 	if [[ "$$branch" != "" ]]; then \
-		cd "$(MODULES_FOLDER)/$(__MODULE)"; \
 		if [[ "$(__PUSH_TAGS)" == "true" ]]; then \
-			$(GIT) checkout $$branch && $(GIT) push $$remote $$branch && $(GIT) push --tags -f; \
+			$(GIT) checkout $$branch && $(GIT) push $$remote $$branch && $(GIT) push $$remote --tags -f; \
 			if [[ "$$?" -ne 0 ]]; then \
 				exit $$?; \
 			fi; \
@@ -758,9 +774,16 @@ __module-push:
 			if [[ "$$?" -ne 0 ]]; then \
 				exit $$?; \
 			fi; \
-		fi; \	
-		cd ../..; \
+		fi; \
 	fi; \
+	tag="$(__TARGET_TAG)"; \
+	if [[ "$$tag" != "" ]]; then \
+		$(GIT) push $$remote tag $$tag; \
+		if [[ "$$?" -ne 0 ]]; then \
+			exit $$?; \
+		fi; \
+	fi; \
+	cd ../..; \
 	}
 
 # Call me as sub-make
