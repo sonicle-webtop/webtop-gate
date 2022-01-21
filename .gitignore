@@ -1,0 +1,5 @@
+.env.*
+/components/*
+/components-static/*
+/sencha-750/*
+/sencha-620/*
