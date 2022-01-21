@@ -87,40 +87,39 @@ MOD_CLONEBASEURL.sonicle-superpom := https://github.com/sonicle
 #  - build-production : module allows "production" build-profile, maven profile "profile-production" will be activated at build time if BUILD_TYPE is "production"
 #  - build-reports : module allows "build-reports" build-profile, maven profile "build-reports" will be activated at build time
 #  - tx-push : module allows "transifex-push" build-profile, maven profile "transifex-push" will be activated when using dedicated target
-MOD_FLAGS.sonicle-superpom				:= git-master,git-develop,git-release
-MOD_FLAGS.sonicle-superpom-senchapkg	:= git-master,git-develop,git-release
-MOD_FLAGS.sonicle-commons				:= git-master,git-develop,git-release
-MOD_FLAGS.sonicle-commons-web			:= git-master,git-develop,git-release
-MOD_FLAGS.sonicle-mail					:= git-master,git-develop,git-release
-MOD_FLAGS.sonicle-security				:= git-master,git-develop,git-release
-MOD_FLAGS.sonicle-dav					:= git-master,git-develop,git-release
-MOD_FLAGS.sonicle-vfs2					:= git-master,git-develop,git-release
-MOD_FLAGS.sonicle-jasperreports-fonts	:= git-master
-MOD_FLAGS.sonicle-extjs					:= git-master,git-develop,git-release
-MOD_FLAGS.sonicle-extjs-extensions		:= git-master,git-develop,git-release,build-development,build-production
-MOD_FLAGS.webtop-superpom				:= git-master,git-develop,git-release
-MOD_FLAGS.webtop-superpom-core			:= git-master,git-develop,git-release
-MOD_FLAGS.webtop-superpom-service		:= git-master,git-develop,git-release
-MOD_FLAGS.webtop-superpom-service-api	:= git-master,git-develop,git-release
-MOD_FLAGS.webtop-core-api				:= git-master,git-develop,git-release,build-development,build-production
-MOD_FLAGS.webtop-calendar-api			:= git-master,git-develop,git-release,build-development,build-production
-MOD_FLAGS.webtop-contacts-api			:= git-master,git-develop,git-release,build-development,build-production
-MOD_FLAGS.webtop-mail-api				:= git-master,git-develop,git-release,build-development,build-production
-MOD_FLAGS.webtop-tasks-api				:= git-master,git-develop,git-release,build-development,build-production
-MOD_FLAGS.webtop-vfs-api 				:= git-master,git-develop,git-release,build-development,build-production
-MOD_FLAGS.webtop-drm-api				:= git-master,git-develop,git-release,build-development,build-production
-MOD_FLAGS.webtop-core					:= git-master,git-develop,git-release,build-development,build-production,tx-push
-MOD_FLAGS.webtop-calendar				:= git-master,git-develop,git-release,build-development,build-production,build-reports,tx-push
-MOD_FLAGS.webtop-contacts				:= git-master,git-develop,git-release,build-development,build-production,build-reports,tx-push
-MOD_FLAGS.webtop-mail					:= git-master,git-develop,git-release,build-development,build-production,tx-push
-MOD_FLAGS.webtop-tasks					:= git-master,git-develop,git-release,build-development,build-production,build-reports,tx-push
-MOD_FLAGS.webtop-vfs					:= git-master,git-develop,git-release,build-development,build-production,tx-push
-MOD_FLAGS.webtop-drm					:= git-master,git-develop,git-release,build-development,build-production,build-reports
-MOD_FLAGS.webtop-mattermost				:= git-master,git-develop,git-release,build-development,build-production
-MOD_FLAGS.webtop-tmceplugins			:= git-master,git-develop,git-release
-MOD_FLAGS.webtop-eas-server				:= git-master,git-develop,git-release
-MOD_FLAGS.webtop-dav-server				:= git-master,git-develop,git-release
-MOD_FLAGS.webtop-webapp					:= git-master,git-develop,git-release,build-development,build-production
+MOD_FLAGS.sonicle-superpom				:= git-develop,git-release
+MOD_FLAGS.sonicle-superpom-senchapkg	:= git-develop,git-release
+MOD_FLAGS.sonicle-commons				:= git-develop,git-release
+MOD_FLAGS.sonicle-commons-web			:= git-develop,git-release
+MOD_FLAGS.sonicle-mail					:= git-develop,git-release
+MOD_FLAGS.sonicle-security				:= git-develop,git-release
+MOD_FLAGS.sonicle-dav					:= git-develop,git-release
+MOD_FLAGS.sonicle-vfs2					:= git-develop,git-release
+MOD_FLAGS.sonicle-jasperreports-fonts	:= 
+MOD_FLAGS.sonicle-extjs					:= git-develop,git-release
+MOD_FLAGS.sonicle-extjs-extensions		:= git-develop,git-release,build-development,build-production
+MOD_FLAGS.webtop-superpom				:= git-develop,git-release
+MOD_FLAGS.webtop-superpom-core			:= git-develop,git-release
+MOD_FLAGS.webtop-superpom-service		:= git-develop,git-release
+MOD_FLAGS.webtop-superpom-service-api	:= git-develop,git-release
+MOD_FLAGS.webtop-core-api				:= git-develop,git-release,build-development,build-production
+MOD_FLAGS.webtop-calendar-api			:= git-develop,git-release,build-development,build-production
+MOD_FLAGS.webtop-contacts-api			:= git-develop,git-release,build-development,build-production
+MOD_FLAGS.webtop-mail-api				:= git-develop,git-release,build-development,build-production
+MOD_FLAGS.webtop-tasks-api				:= git-develop,git-release,build-development,build-production
+MOD_FLAGS.webtop-vfs-api 				:= git-develop,git-release,build-development,build-production
+MOD_FLAGS.webtop-drm-api				:= git-develop,git-release,build-development,build-production
+MOD_FLAGS.webtop-core					:= git-develop,git-release,build-development,build-production,tx-push
+MOD_FLAGS.webtop-calendar				:= git-develop,git-release,build-development,build-production,build-reports,tx-push
+MOD_FLAGS.webtop-contacts				:= git-develop,git-release,build-development,build-production,build-reports,tx-push
+MOD_FLAGS.webtop-mail					:= git-develop,git-release,build-development,build-production,tx-push
+MOD_FLAGS.webtop-tasks					:= git-develop,git-release,build-development,build-production,build-reports,tx-push
+MOD_FLAGS.webtop-vfs					:= git-develop,git-release,build-development,build-production,tx-push
+MOD_FLAGS.webtop-drm					:= git-develop,git-release,build-development,build-production,build-reports
+MOD_FLAGS.webtop-mattermost				:= git-develop,git-release,build-development,build-production
+MOD_FLAGS.webtop-eas-server				:= git-develop,git-release
+MOD_FLAGS.webtop-dav-server				:= git-develop,git-release
+MOD_FLAGS.webtop-webapp					:= git-develop,git-release,build-development,build-production
 
 # ====================
 # MOD_BUILDS.{module_name}
@@ -366,6 +365,19 @@ checkout-release: __check-modules-dir
 	for comp in $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS); do \
 		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
 		$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="release" __DEFAULT_BRANCH="master" __module-pull; \
+	done; \
+	}
+
+.PHONY: modules-listbranch
+.HELP: modules-listbranch ## List branches for each local module (except docs and tools)
+modules-listbranch: __check-modules-dir
+	@{ \
+	set -e; \
+	for comp in $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS); do \
+		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
+		cd "$(MODULES_FOLDER)/$$comp"; \
+		$(GIT) branch; \
+		cd ../..; \
 	done; \
 	}
 
