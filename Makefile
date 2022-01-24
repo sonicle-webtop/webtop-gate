@@ -179,6 +179,9 @@ endif
 ifeq ($(GREP),)
 	GREP := grep
 endif
+ifeq ($(SED),)
+	SED := sed
+endif
 ifeq ($(GIT),)
 	GIT := git
 endif
@@ -206,8 +209,8 @@ endif
 .PHONY: help
 .HELP: help ## Prints this help message
 help:
-	@echo -e "$$($(GREP) -hE '^.HELP:.*##' $(MAKEFILE_LIST) | sort | sed -e 's/^\.HELP:\s*//' -e 's/\s*##\s*/:/' -e 's/^\(.\+\):\(.*\)/\\x1b[36m\1\\x1b[m:\2/' | $(AWK) -F':' '{$$1 = sprintf("%-40s", $$1)} 1')"
-##@echo -e "$$($(GREP) -hE '^.HELP:.*##' $(MAKEFILE_LIST) | sort | sed -e 's/^\.HELP:\s*//' -e 's/\s*##\s*/:/' -e 's/^\(.\+\):\(.*\)/\\x1b[36m\1\\x1b[m:\2/' | column -c2 -t -s :)"
+	@echo -e "$$($(GREP) -hE '^.HELP:.*##' $(MAKEFILE_LIST) | sort | $(SED) -e 's/^\.HELP:\s*//' -e 's/\s*##\s*/:/' -e 's/^\(.\+\):\(.*\)/\\x1b[36m\1\\x1b[m:\2/' | $(AWK) -F':' '{$$1 = sprintf("%-40s", $$1)} 1')"
+##@echo -e "$$($(GREP) -hE '^.HELP:.*##' $(MAKEFILE_LIST) | sort | $(SED) -e 's/^\.HELP:\s*//' -e 's/\s*##\s*/:/' -e 's/^\(.\+\):\(.*\)/\\x1b[36m\1\\x1b[m:\2/' | column -c2 -t -s :)"
 
 .PHONY: setup
 .HELP: setup ## Setup the entire build workspace - clone required modules and prepare SenchaTools
@@ -512,7 +515,7 @@ clean-localartifacts:
 __tomcat-deploy:
 	@{ \
 	echo -e "Uploading $(__CONTEXT_NAME) on Tomcat [$(__TOMCAT_HOSTPORT)]"; \
-	pathparam=`echo $(__CONTEXT_NAME) | sed 's/#/%23/g'`; \
+	pathparam=`echo $(__CONTEXT_NAME) | $(SED) 's/#/%23/g'`; \
 	curl --anyauth -u "$(__TOMCAT_USERPASS)" --upload-file "$(__WAR_FILE)" http://$(__TOMCAT_HOSTPORT)/manager/text/deploy?path=/$$pathparam; \
 	if [[ "$$?" -ne 0 ]]; then \
 		exit $$?; \
