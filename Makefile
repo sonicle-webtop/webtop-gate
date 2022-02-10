@@ -1011,16 +1011,16 @@ __setup-folders:
 __setup-git:
 	@{ \
 	value=`$(GIT) config --get core.autocrlf`; \
-	if [[ $$value != "false" ]]; then \
-		echo -e "$(cYELLOW)Git 'core.autocrlf' config will be set to 'false'\nCurrent value: $$value$(cRESET)"; \
-		#$(GIT) config --global core.autocrlf false; \
-		echo -e "$(cRED)UNCOMMENT ME: git config --global core.autocrlf false;$(cRESET)"; \
+	if [[ $$value != "input" ]]; then \
+		echo -e "$(cYELLOW)Git 'core.autocrlf' config will be set to 'input'\nCurrent value: $$value$(cRESET)"; \
+		$(GIT) config --global core.autocrlf input; \
+		#echo -e "$(cRED)UNCOMMENT ME: git config --global core.autocrlf input;$(cRESET)"; \
 	fi; \
 	value=`$(GIT) config --get core.filemode`; \
 	if [[ $$value != "false" ]]; then \
 		echo -e "$(cYELLOW)Git 'core.filemode' config will be set to 'false'\nCurrent value: $$value$(cRESET)"; \
-		#$(GIT) config --global core.filemode false; \
-		echo -e "$(cRED)UNCOMMENT ME: git config --global core.filemode false;$(cRESET)"; \
+		$(GIT) config --global core.filemode false; \
+		#echo -e "$(cRED)UNCOMMENT ME: git config --global core.filemode false;$(cRESET)"; \
 	fi; \
 	}
 
