@@ -1,6 +1,17 @@
 # Building WebTop
 
-This allows to prepare a building environment suitable for building all WebTop's repositories and produce the application war file for deployment.
+This allows to prepare a building environment suitable for building all WebTop's repositories and produce the application war file for deployment. See [Cloning this repository](#cloning-this-repository) for more info about this.
+
+## Requirements
+
+- System with minimum 2GB of RAM and enough disk space
+- `Git SCM` (>= 2.20) with `Git LFS` support
+- `Maven` (>= 3.5.x, < 3.7)
+- `Java JDK` (= 1.8.x)
+- `NodeJS` (= 8.x)
+- `make`, `awk`, `tar`, `bzip2`, `grep`, `sed` commands available on system
+
+You can run this on Windows systems through [Cygwin](https://www.cygwin.com/) but you have make sure to not install `git` commands in Cygwin, so both environments will share same executables under your main Windows OS. Finally, if you have any ssh keys to access sub-modules repositories, remember to copy or link them under your Cygwin's .ssh home, making them available to Cygwin environment also.
 
 ## Cloning this repository
 
@@ -12,15 +23,6 @@ GIT_LFS_SKIP_SMUDGE=1 git clone <this-repository-url>
 ```
 
 LFS clone may already be skipped on system if `git-lfs` was originally installed with `--skip-smudge` option or if smudge configs were set as global.
-
-## Requirements
-
-- System with minimum 2GB of RAM and enough disk space
-- `Git SCM` (>= 2.20) with `Git LFS` support
-- `Maven` (>= 3.5.x, < 3.7)
-- `Java JDK` (= 1.8.x)
-- `NodeJS` (= 8.x)
-- `make`, `awk`, `tar`, `bzip2`, `grep`, `sed` commands available on system
 
 ### Fix JasperReports mirrors
 
