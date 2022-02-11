@@ -1,5 +1,10 @@
 .env.*
-/components/*
-/components-static/*
+# Modules folder
+/modules/*
+/modules-extra/*
+# Sencha tools folders
 /sencha-750/*
 /sencha-620/*
+# Retrocompatible modules folder names
+/components/*
+/components-static/*

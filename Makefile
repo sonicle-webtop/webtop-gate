@@ -2,13 +2,21 @@ SHELL := /bin/bash
 MAKEFILE_NAME := $(firstword $(MAKEFILE_LIST))
 SUB-MAKE := $(MAKE) -f $(MAKEFILE_NAME) --no-print-directory
 WORKSPACE_DIR := $(shell pwd)
-ifeq ($(MODULES_FOLDER),)
+ifeq ($(wildcard $(WORKSPACE_DIR)/components/.),)
+	MODULES_FOLDER := modules
+else
 	MODULES_FOLDER := components
 endif
 TARGET_WARS_DIR := $(WORKSPACE_DIR)/target-wars
 TARGET_SERVERS_DIR := $(WORKSPACE_DIR)/target-servers
 FILES_DIRNAME := files
 FILES_DIR := $(WORKSPACE_DIR)/files
+
+ifeq ($(shell type -p cygpath || echo ""),)
+	IS_CYGWIN := 0
+else
+	IS_CYGWIN := 1
+endif
 
 # ====================
 # Color constants
@@ -927,16 +935,20 @@ __extract-senchatools:
 		echo -e "Maven .m2 located at: '$$mvn_m2'"; \
 		mkdir -p "$$mvn_m2"; \
 		propfile="$$mvn_m2/$(__SENCHATOOLS_TGTPROP).properties"; \
+		toolsfolder_real=$$toolsfolder; \
+		if [[ $(IS_CYGWIN) -eq 1 ]]; then \
+			toolsfolder_real=`cygpath -w "$$toolsfolder"`; \
+		fi; \
 		if [[ ! -f "$$propfile" ]]; then \
-			echo "sencha.cmd=$$toolsfolder/cmd" > $$propfile; \
-			echo "sencha.workspace=$$toolsfolder/workspace" >> $$propfile; \
+			echo "sencha.cmd=$$toolsfolder_real/cmd" > $$propfile; \
+			echo "sencha.workspace=$$toolsfolder_real/workspace" >> $$propfile; \
 			echo -e "Properties 'sencha.cmd' and 'sencha.workspace' written to '$$propfile' file."; \
 		else \
 			echo -e "File '$$propfile' already exists."; \
 			echo -e "You can use the following properties for configure your '.properties' file:"; \
-			echo -e "$(cGREEN)sencha.cmd=$$toolsfolder/cmd$(cRESET)"; \
-			#echo -e "$(cGREEN)sencha.cmd=$$toolsfolder/cmd/$$cmdversion$(cRESET)"; \
-			echo -e "$(cGREEN)sencha.workspace=$$toolsfolder/workspace$(cRESET)"; \
+			echo -e "$(cGREEN)sencha.cmd=$$toolsfolder_real/cmd$(cRESET)"; \
+			#echo -e "$(cGREEN)sencha.cmd=$$toolsfolder_real/cmd/$$cmdversion$(cRESET)"; \
+			echo -e "$(cGREEN)sencha.workspace=$$toolsfolder_real/workspace$(cRESET)"; \
 		fi; \
 	else \
 		echo -e "Folder '$(__SENCHATOOLS_TGTFOLDERNAME)' already exists."; \
