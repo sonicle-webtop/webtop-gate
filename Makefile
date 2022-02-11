@@ -70,6 +70,8 @@ webtop-drm
 
 COMPONENTS_COM :=
 
+COMPONENTS_EXTRA :=
+
 SERVERS := \
 webtop-eas-server \
 webtop-dav-server
@@ -305,7 +307,7 @@ setup-senchatools-links: __check-modules-dir
 setup-modules: __setup-git __setup-folders
 	@{ \
 	set -e; \
-	for comp in $(TOOLS) $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(DOCS); do \
+	for comp in $(TOOLS) $(COMPONENTS) $(COMPONENTS_COM) $(COMPONENTS_EXTRA) $(SERVERS) $(WEBAPPS) $(DOCS); do \
 		if [ ! -d "$(MODULES_FOLDER)/$$comp" ]; then \
 			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
 			$(SUB-MAKE) __MODULE="$$comp" __MODULE_BASEURL="MOD_CLONEBASEURL.$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="$(DEFAULT_GIT_BRANCH)" __module-clone; \
