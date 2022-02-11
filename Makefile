@@ -346,6 +346,21 @@ checkout-branch: __check-modules-dir
 	done; \
 	}
 
+.PHONY: checkout-tag
+.HELP: checkout-tag ## Updates each local module (except docs and tools), switching to specified tag, if present [TARGET_TAG = tag to checkout]
+checkout-tag: __check-modules-dir
+	@{ \
+	set -e; \
+	if [[ "$(TARGET_TAG)" == "" ]]; then \
+		echo -e "Parameter variable 'TARGET_TAG' NOT defined"; \
+		exit 255; \
+	fi; \
+	for comp in $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS); do \
+		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
+		$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_TAG="$(TARGET_TAG)" __DEFAULT_BRANCH="master" __module-pull; \
+	done; \
+	}
+
 .PHONY: checkout-master
 .HELP: checkout-master ## Updates each local module (except docs and tools), switching to 'master' and pulling changes from respective remotes
 checkout-master: __check-modules-dir
@@ -725,7 +740,6 @@ __module-tag:
 .PHONY: __module-pull
 __module-pull:
 	@{ \
-	set -e; \
 	if [[ "$(__MODULE)" == "" ]]; then \
 		echo -e "'__MODULE' is empty"; \
 		exit 255; \
@@ -740,11 +754,17 @@ __module-pull:
 	else \
 		branch="$(__DEFAULT_BRANCH)"; \
 	fi; \
+	tag="$(__TARGET_TAG)"; \
 	if [[ "$$branch" != "" ]]; then \
 		cd "$(MODULES_FOLDER)/$(__MODULE)"; \
 		$(GIT) checkout $$branch && $(GIT) pull; \
 		if [[ "$$?" -ne 0 ]]; then \
 			exit $$?; \
+		fi; \
+		if [[ "$$tag" != "" ]]; then \
+			set +e; \
+			$(GIT) checkout tags/$$tag; \
+			set -e; \
 		fi; \
 		cd ../..; \
 	fi; \
