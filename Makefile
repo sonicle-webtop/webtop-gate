@@ -174,6 +174,9 @@ endif
 ifeq ($(DEFAULT_GIT_BRANCH),)
 	DEFAULT_GIT_BRANCH := master
 endif
+ifeq ($(DEFAULT_GIT_BRANCH_EXTRA),)
+	DEFAULT_GIT_BRANCH_EXTRA := master
+endif
 ifeq ($(DEFAULT_CLONE_BASEURL),)
 	DEFAULT_CLONE_BASEURL := https://github.com/sonicle-webtop
 endif
@@ -319,7 +322,7 @@ setup-modules: __setup-git __setup-folders
 	for comp in $(COMPONENTS_EXTRA); do \
 		if [ ! -d "$(EXTRA_MODULES_DIR)/$$comp" ]; then \
 			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-			$(SUB-MAKE) __MODULE="$$comp" __MODULE_BASEURL="MOD_CLONEBASEURL.$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="master" __module-clone; \
+			$(SUB-MAKE) __MODULE="$$comp" __MODULE_BASEURL="MOD_CLONEBASEURL.$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="$(DEFAULT_GIT_BRANCH_EXTRA)" __module-clone; \
 		fi; \
 	done; \
 	}
