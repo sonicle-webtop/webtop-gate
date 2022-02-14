@@ -1051,10 +1051,10 @@ __setup-folders:
 	cd $(WORKSPACE_DIR); \
 	if [[ ! -d "$(MODULES_FOLDER)" ]]; then \
 		mkdir $(MODULES_FOLDER); \
-	fi \
+	fi; \
 	if [[ ! -d "$(EXTRA_MODULES_FOLDER)" ]]; then \
 		mkdir $(EXTRA_MODULES_FOLDER); \
-	fi \
+	fi; \
 	}
 
 .PHONY: __setup-git
