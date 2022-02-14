@@ -8,8 +8,10 @@ else
 	MODULES_FOLDER := components
 endif
 EXTRA_MODULES_FOLDER := $(MODULES_FOLDER)-extra
+
 MODULES_DIR := $(WORKSPACE_DIR)/$(MODULES_FOLDER)
 EXTRA_MODULES_DIR := $(WORKSPACE_DIR)/$(EXTRA_MODULES_FOLDER)
+
 TARGET_WARS_DIR := $(WORKSPACE_DIR)/target-wars
 TARGET_SERVERS_DIR := $(WORKSPACE_DIR)/target-servers
 FILES_DIRNAME := files
@@ -240,6 +242,7 @@ setup-senchatools:
 	is_git=0; \
 	if [[ -f "$(WORKSPACE_DIR)/.git/config" ]]; then \
 		is_git=1; \
+		$(GIT) lfs install; \
 	fi; \
 	version="$(DEFAULT_SENCHATOOLS_VERSION)"; \
 	if [[ "$(TARGET_SENCHATOOLS_VERSION)" != "" ]]; then \
@@ -316,13 +319,13 @@ setup-modules: __setup-git __setup-folders
 	for comp in $(TOOLS) $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(DOCS); do \
 		if [ ! -d "$(MODULES_FOLDER)/$$comp" ]; then \
 			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-			$(SUB-MAKE) __MODULE="$$comp" __MODULE_BASEURL="MOD_CLONEBASEURL.$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="$(DEFAULT_GIT_BRANCH)" __module-clone; \
+			$(SUB-MAKE) __MODULES_FOLDER="$(MODULES_FOLDER)" __MODULE="$$comp" __MODULE_BASEURL="MOD_CLONEBASEURL.$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="$(DEFAULT_GIT_BRANCH)" __module-clone; \
 		fi; \
 	done; \
 	for comp in $(COMPONENTS_EXTRA); do \
-		if [ ! -d "$(EXTRA_MODULES_DIR)/$$comp" ]; then \
+		if [ ! -d "$(EXTRA_MODULES_FOLDER)/$$comp" ]; then \
 			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-			$(SUB-MAKE) __MODULE="$$comp" __MODULE_BASEURL="MOD_CLONEBASEURL.$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="$(DEFAULT_GIT_BRANCH_EXTRA)" __module-clone; \
+			$(SUB-MAKE) __MODULES_FOLDER="$(EXTRA_MODULES_FOLDER)" __MODULE="$$comp" __MODULE_BASEURL="MOD_CLONEBASEURL.$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="$(DEFAULT_GIT_BRANCH_EXTRA)" __module-clone; \
 		fi; \
 	done; \
 	}
@@ -836,6 +839,10 @@ __module-push:
 __module-clone:
 	@{ \
 	set -e; \
+	if [[ "$(__MODULES_FOLDER)" == "" ]]; then \
+		echo -e "'__MODULES_FOLDER' is empty"; \
+		exit 255; \
+	fi; \
 	if [[ "$(__MODULE)" == "" ]]; then \
 		echo -e "'__MODULE' is empty"; \
 		exit 255; \
@@ -851,7 +858,7 @@ __module-clone:
 		baseurl=$($(__MODULE_BASEURL)); \
 	fi; \
 	echo "$$baseurl/$(__MODULE).git"; \
-	$(GIT) clone -b $$branch $$baseurl/$(__MODULE).git "./$(MODULES_FOLDER)/$(__MODULE)"; \
+	$(GIT) clone -b $$branch $$baseurl/$(__MODULE).git "./$(__MODULES_FOLDER)/$(__MODULE)"; \
 	if [[ "$$?" -ne 0 ]]; then \
 		exit $$?; \
 	fi; \
@@ -972,7 +979,7 @@ __extract-senchatools:
 		toolsfolder_real=$$toolsfolder; \
 		if [[ $(IS_CYGWIN) -eq 1 ]]; then \
 			toolsfolder_real=`cygpath -w "$$toolsfolder"`; \
-			toolsfolder_real=$${toolsfolder_real//\\//};
+			toolsfolder_real=$${toolsfolder_real//\\//}; \
 		fi; \
 		if [[ ! -f "$$propfile" ]]; then \
 			echo "sencha.cmd=$$toolsfolder_real/cmd" > $$propfile; \
