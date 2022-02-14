@@ -7,6 +7,9 @@ ifeq ($(wildcard $(WORKSPACE_DIR)/components/.),)
 else
 	MODULES_FOLDER := components
 endif
+EXTRA_MODULES_FOLDER := $(MODULES_FOLDER)-extra
+MODULES_DIR := $(WORKSPACE_DIR)/$(MODULES_FOLDER)
+EXTRA_MODULES_DIR := $(WORKSPACE_DIR)/$(EXTRA_MODULES_FOLDER)
 TARGET_WARS_DIR := $(WORKSPACE_DIR)/target-wars
 TARGET_SERVERS_DIR := $(WORKSPACE_DIR)/target-servers
 FILES_DIRNAME := files
@@ -307,10 +310,16 @@ setup-senchatools-links: __check-modules-dir
 setup-modules: __setup-git __setup-folders
 	@{ \
 	set -e; \
-	for comp in $(TOOLS) $(COMPONENTS) $(COMPONENTS_COM) $(COMPONENTS_EXTRA) $(SERVERS) $(WEBAPPS) $(DOCS); do \
+	for comp in $(TOOLS) $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(DOCS); do \
 		if [ ! -d "$(MODULES_FOLDER)/$$comp" ]; then \
 			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
 			$(SUB-MAKE) __MODULE="$$comp" __MODULE_BASEURL="MOD_CLONEBASEURL.$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="$(DEFAULT_GIT_BRANCH)" __module-clone; \
+		fi; \
+	done; \
+	for comp in $(COMPONENTS_EXTRA); do \
+		if [ ! -d "$(EXTRA_MODULES_DIR)/$$comp" ]; then \
+			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
+			$(SUB-MAKE) __MODULE="$$comp" __MODULE_BASEURL="MOD_CLONEBASEURL.$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="master" __module-clone; \
 		fi; \
 	done; \
 	}
@@ -960,6 +969,7 @@ __extract-senchatools:
 		toolsfolder_real=$$toolsfolder; \
 		if [[ $(IS_CYGWIN) -eq 1 ]]; then \
 			toolsfolder_real=`cygpath -w "$$toolsfolder"`; \
+			toolsfolder_real=$${toolsfolder_real//\\//};
 		fi; \
 		if [[ ! -f "$$propfile" ]]; then \
 			echo "sencha.cmd=$$toolsfolder_real/cmd" > $$propfile; \
@@ -1038,6 +1048,9 @@ __setup-folders:
 	cd $(WORKSPACE_DIR); \
 	if [[ ! -d "$(MODULES_FOLDER)" ]]; then \
 		mkdir $(MODULES_FOLDER); \
+	fi \
+	if [[ ! -d "$(EXTRA_MODULES_FOLDER)" ]]; then \
+		mkdir $(EXTRA_MODULES_FOLDER); \
 	fi \
 	}
 
