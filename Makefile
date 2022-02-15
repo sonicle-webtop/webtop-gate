@@ -175,11 +175,11 @@ MOD_BUILDS_TGTFOLDER.webtop-webapp.default	:= $(TARGET_WARS_DIR)
 ifeq ($(BUILD_TYPE),)
 	BUILD_TYPE := production
 endif
-ifeq ($(DEFAULT_GIT_BRANCH),)
-	DEFAULT_GIT_BRANCH := master
+ifeq ($(DEFAULT_BASE_BRANCH),)
+	DEFAULT_BASE_BRANCH := master
 endif
-ifeq ($(DEFAULT_GIT_BRANCH_EXTRA),)
-	DEFAULT_GIT_BRANCH_EXTRA := master
+ifeq ($(DEFAULT_BASE_BRANCH_EXTRA),)
+	DEFAULT_BASE_BRANCH_EXTRA := master
 endif
 ifeq ($(DEFAULT_CLONE_BASEURL),)
 	DEFAULT_CLONE_BASEURL := https://github.com/sonicle-webtop
@@ -320,14 +320,14 @@ setup-modules: __setup-git __setup-folders
 	set -e; \
 	for comp in $(TOOLS) $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(DOCS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
 		modules="$(MODULES_FOLDER)"; \
-		defaultbranch="$(DEFAULT_GIT_BRANCH)"; \
+		basebranch="$(DEFAULT_BASE_BRANCH)"; \
 		if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$$comp($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$$comp($$| ) ]]; then \
 			modules="$(EXTRA_MODULES_FOLDER)"; \
-			defaultbranch="$(DEFAULT_GIT_BRANCH_EXTRA)"; \
+			basebranch="$(DEFAULT_BASE_BRANCH_EXTRA)"; \
 		fi; \		
 		if [ ! -d "$$modules/$$comp" ]; then \
 			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-			$(SUB-MAKE) __MODULE="$$comp" __MODULE_BASEURL="MOD_CLONEBASEURL.$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="$$defaultbranch" __module-clone; \
+			$(SUB-MAKE) __MODULE="$$comp" __MODULE_BASEURL="MOD_CLONEBASEURL.$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="$$basebranch" __module-clone; \
 		fi; \
 	done; \
 	}
@@ -407,12 +407,14 @@ checkout-tag: __check-modules-dir
 	fi; \
 	for comp in $$comps; do \
 		modules="$(MODULES_FOLDER)"; \
+		basebranch="$(DEFAULT_BASE_BRANCH)"; \
 		if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$$comp($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$$comp($$| ) ]]; then \
 			modules="$(EXTRA_MODULES_FOLDER)"; \
+			basebranch="$(DEFAULT_BASE_BRANCH_EXTRA)"; \
 		fi; \
 		if [[ -f "$$modules/$$comp/.git/config" ]]; then \
 			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_TAG="$(TAG)" __DEFAULT_BRANCH="master" __module-pull; \
+			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_TAG="$(TAG)" __DEFAULT_BRANCH="$$basebranch" __module-pull; \
 		fi; \
 	done; \
 	}
@@ -431,12 +433,14 @@ checkout-master: __check-modules-dir
 	fi; \
 	for comp in $$comps; do \
 		modules="$(MODULES_FOLDER)"; \
+		basebranch="$(DEFAULT_BASE_BRANCH)"; \
 		if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$$comp($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$$comp($$| ) ]]; then \
 			modules="$(EXTRA_MODULES_FOLDER)"; \
+			basebranch="$(DEFAULT_BASE_BRANCH_EXTRA)"; \
 		fi; \
 		if [[ -f "$$modules/$$comp/.git/config" ]]; then \
 			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="master" __DEFAULT_BRANCH="master" __module-pull; \
+			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="master" __DEFAULT_BRANCH="$$basebranch" __module-pull; \
 		fi; \
 	done; \
 	}
@@ -455,12 +459,14 @@ checkout-develop: __check-modules-dir
 	fi; \
 	for comp in $$comps; do \
 		modules="$(MODULES_FOLDER)"; \
+		basebranch="$(DEFAULT_BASE_BRANCH)"; \
 		if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$$comp($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$$comp($$| ) ]]; then \
 			modules="$(EXTRA_MODULES_FOLDER)"; \
+			basebranch="$(DEFAULT_BASE_BRANCH_EXTRA)"; \
 		fi; \
 		if [[ -f "$$modules/$$comp/.git/config" ]]; then \
 			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="develop" __DEFAULT_BRANCH="master" __module-pull; \
+			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="develop" __DEFAULT_BRANCH="$$basebranch" __module-pull; \
 		fi; \
 	done; \
 	}
@@ -479,12 +485,14 @@ checkout-release: __check-modules-dir
 	fi; \
 	for comp in $$comps; do \
 		modules="$(MODULES_FOLDER)"; \
+		basebranch="$(DEFAULT_BASE_BRANCH)"; \
 		if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$$comp($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$$comp($$| ) ]]; then \
 			modules="$(EXTRA_MODULES_FOLDER)"; \
+			basebranch="$(DEFAULT_BASE_BRANCH_EXTRA)"; \
 		fi; \
 		if [[ -f "$$modules/$$comp/.git/config" ]]; then \
 			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="release" __DEFAULT_BRANCH="master" __module-pull; \
+			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="release" __DEFAULT_BRANCH="$$basebranch" __module-pull; \
 		fi; \
 	done; \
 	}
