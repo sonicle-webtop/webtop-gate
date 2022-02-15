@@ -84,6 +84,8 @@ webtop-dav-server
 WEBAPPS := \
 webtop-webapp
 
+WEBAPPS_EXTRA :=
+
 DOCS := \
 docs
 
@@ -316,98 +318,174 @@ setup-senchatools-links: __check-modules-dir
 setup-modules: __setup-git __setup-folders
 	@{ \
 	set -e; \
-	for comp in $(TOOLS) $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(DOCS); do \
-		if [ ! -d "$(MODULES_FOLDER)/$$comp" ]; then \
+	for comp in $(TOOLS) $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(DOCS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
+		modules="$(MODULES_FOLDER)"; \
+		defaultbranch="$(DEFAULT_GIT_BRANCH)"; \
+		if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$$comp($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$$comp($$| ) ]]; then \
+			modules="$(EXTRA_MODULES_FOLDER)"; \
+			defaultbranch="$(DEFAULT_GIT_BRANCH_EXTRA)"; \
+		fi; \		
+		if [ ! -d "$$modules/$$comp" ]; then \
 			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-			$(SUB-MAKE) __MODULES_FOLDER="$(MODULES_FOLDER)" __MODULE="$$comp" __MODULE_BASEURL="MOD_CLONEBASEURL.$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="$(DEFAULT_GIT_BRANCH)" __module-clone; \
-		fi; \
-	done; \
-	for comp in $(COMPONENTS_EXTRA); do \
-		if [ ! -d "$(EXTRA_MODULES_FOLDER)/$$comp" ]; then \
-			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-			$(SUB-MAKE) __MODULES_FOLDER="$(EXTRA_MODULES_FOLDER)" __MODULE="$$comp" __MODULE_BASEURL="MOD_CLONEBASEURL.$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="$(DEFAULT_GIT_BRANCH_EXTRA)" __module-clone; \
+			$(SUB-MAKE) __MODULE="$$comp" __MODULE_BASEURL="MOD_CLONEBASEURL.$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="$$defaultbranch" __module-clone; \
 		fi; \
 	done; \
 	}
 
 .PHONY: checkout
-.HELP: checkout ## Updates each local module (except docs), keeping branch and pulling changes from respective remotes
+.HELP: checkout ## Updates each local module (except docs), keeping branch and pulling changes from respective remotes [MODULES = base or extra, to filter module involved]
 checkout: __check-modules-dir
 	@{ \
 	set -e; \
-	cd $(MODULES_FOLDER); \
-	for comp in $(TOOLS) $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS); do \
-		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-		cd "$$comp"; \
-		$(GIT) pull; \
-		if [[ "$$?" -ne 0 ]]; then \
-			exit $$?; \
+	comps=""; \
+	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "base" ]]; then \
+		comps+="$(TOOLS) $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) "; \
+	fi; \
+	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "extra" ]]; then \
+		comps+="$(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA) "; \
+	fi; \
+	for comp in $$comps; do \
+		modules="$(MODULES_FOLDER)"; \
+		if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$$comp($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$$comp($$| ) ]]; then \
+			modules="$(EXTRA_MODULES_FOLDER)"; \
 		fi; \
-		cd ..; \
+		if [[ -f "$$modules/$$comp/.git/config" ]]; then \
+			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
+			cd "$$modules/$$comp"; \
+			$(GIT) pull; \
+			if [[ "$$?" -ne 0 ]]; then \
+				exit $$?; \
+			fi; \
+			cd $(WORKSPACE_DIR); \
+		fi; \
 	done; \
-	cd ..; \
 	}
 
 .PHONY: checkout-branch
-.HELP: checkout-branch ## Updates each local module (except docs and tools), switching to specified branch, if present, and pulling changes [TARGET_BRANCH = branch to checkout]
+.HELP: checkout-branch ## Updates each local module (except docs and tools), switching to specified branch, if present, and pulling changes [BRANCH = branch to checkout][MODULES = base or extra, to filter module involved]
 checkout-branch: __check-modules-dir
 	@{ \
 	set -e; \
-	if [[ "$(TARGET_BRANCH)" == "" ]]; then \
-		echo -e "Parameter variable 'TARGET_BRANCH' NOT defined"; \
+	if [[ "$(BRANCH)" == "" ]]; then \
+		echo -e "Parameter variable 'BRANCH' NOT defined"; \
 		exit 255; \
 	fi; \
-	for comp in $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS); do \
-		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-		$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="$(TARGET_BRANCH)" __DEFAULT_BRANCH="$(TARGET_BRANCH)" __module-pull; \
+	comps=""; \
+	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "base" ]]; then \
+		comps+="$(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) "; \
+	fi; \
+	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "extra" ]]; then \
+		comps+="$(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA) "; \
+	fi; \
+	for comp in $$comps; do \
+		modules="$(MODULES_FOLDER)"; \
+		if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$$comp($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$$comp($$| ) ]]; then \
+			modules="$(EXTRA_MODULES_FOLDER)"; \
+		fi; \
+		if [[ -f "$$modules/$$comp/.git/config" ]]; then \
+			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
+			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="$(BRANCH)" __DEFAULT_BRANCH="$(BRANCH)" __module-pull; \
+		fi; \
 	done; \
 	}
 
 .PHONY: checkout-tag
-.HELP: checkout-tag ## Updates each local module (except docs and tools), switching to specified tag, if present [TARGET_TAG = tag to checkout]
+.HELP: checkout-tag ## Updates each local module (except docs and tools), switching to specified tag, if present [TAG = tag to checkout][MODULES = base or extra, to filter module involved]
 checkout-tag: __check-modules-dir
 	@{ \
 	set -e; \
-	if [[ "$(TARGET_TAG)" == "" ]]; then \
-		echo -e "Parameter variable 'TARGET_TAG' NOT defined"; \
+	if [[ "$(TAG)" == "" ]]; then \
+		echo -e "Parameter variable 'TAG' NOT defined"; \
 		exit 255; \
 	fi; \
-	for comp in $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS); do \
-		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-		$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_TAG="$(TARGET_TAG)" __DEFAULT_BRANCH="master" __module-pull; \
+	comps=""; \
+	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "base" ]]; then \
+		comps+="$(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) "; \
+	fi; \
+	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "extra" ]]; then \
+		comps+="$(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA) "; \
+	fi; \
+	for comp in $$comps; do \
+		modules="$(MODULES_FOLDER)"; \
+		if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$$comp($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$$comp($$| ) ]]; then \
+			modules="$(EXTRA_MODULES_FOLDER)"; \
+		fi; \
+		if [[ -f "$$modules/$$comp/.git/config" ]]; then \
+			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
+			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_TAG="$(TAG)" __DEFAULT_BRANCH="master" __module-pull; \
+		fi; \
 	done; \
 	}
 
 .PHONY: checkout-master
-.HELP: checkout-master ## Updates each local module (except docs and tools), switching to 'master' and pulling changes from respective remotes
+.HELP: checkout-master ## Updates each local module (except docs and tools), switching to 'master' and pulling changes from respective remotes [MODULES = base or extra, to filter module involved]
 checkout-master: __check-modules-dir
 	@{ \
 	set -e; \
-	for comp in $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS); do \
-		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-		$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="master" __DEFAULT_BRANCH="master" __module-pull; \
+	comps=""; \
+	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "base" ]]; then \
+		comps+="$(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) "; \
+	fi; \
+	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "extra" ]]; then \
+		comps+="$(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA) "; \
+	fi; \
+	for comp in $$comps; do \
+		modules="$(MODULES_FOLDER)"; \
+		if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$$comp($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$$comp($$| ) ]]; then \
+			modules="$(EXTRA_MODULES_FOLDER)"; \
+		fi; \
+		if [[ -f "$$modules/$$comp/.git/config" ]]; then \
+			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
+			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="master" __DEFAULT_BRANCH="master" __module-pull; \
+		fi; \
 	done; \
 	}
 
 .PHONY: checkout-develop
-.HELP: checkout-develop ## Updates each local module (except docs and tools), switching to 'develop' (if present) and pulling changes from respective remotes
+.HELP: checkout-develop ## Updates each local module (except docs and tools), switching to 'develop' (if present) and pulling changes from respective remotes [MODULES = base or extra, to filter module involved]
 checkout-develop: __check-modules-dir
 	@{ \
 	set -e; \
-	for comp in $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS); do \
-		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-		$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="develop" __DEFAULT_BRANCH="master" __module-pull; \
+	comps=""; \
+	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "base" ]]; then \
+		comps+="$(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) "; \
+	fi; \
+	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "extra" ]]; then \
+		comps+="$(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA) "; \
+	fi; \
+	for comp in $$comps; do \
+		modules="$(MODULES_FOLDER)"; \
+		if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$$comp($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$$comp($$| ) ]]; then \
+			modules="$(EXTRA_MODULES_FOLDER)"; \
+		fi; \
+		if [[ -f "$$modules/$$comp/.git/config" ]]; then \
+			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
+			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="develop" __DEFAULT_BRANCH="master" __module-pull; \
+		fi; \
 	done; \
 	}
 
 .PHONY: checkout-release
-.HELP: checkout-release ## Updates each local module (except docs and tools), switching to 'release' (if present) and pulling changes from respective remotes
+.HELP: checkout-release ## Updates each local module (except docs and tools), switching to 'release' (if present) and pulling changes from respective remotes [MODULES = base or extra, to filter module involved]
 checkout-release: __check-modules-dir
 	@{ \
 	set -e; \
-	for comp in $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS); do \
-		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-		$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="release" __DEFAULT_BRANCH="master" __module-pull; \
+	comps=""; \
+	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "base" ]]; then \
+		comps+="$(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) "; \
+	fi; \
+	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "extra" ]]; then \
+		comps+="$(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA) "; \
+	fi; \
+	for comp in $$comps; do \
+		modules="$(MODULES_FOLDER)"; \
+		if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$$comp($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$$comp($$| ) ]]; then \
+			modules="$(EXTRA_MODULES_FOLDER)"; \
+		fi; \
+		if [[ -f "$$modules/$$comp/.git/config" ]]; then \
+			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
+			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="release" __DEFAULT_BRANCH="master" __module-pull; \
+		fi; \
 	done; \
 	}
 
@@ -416,11 +494,17 @@ checkout-release: __check-modules-dir
 modules-listbranch: __check-modules-dir
 	@{ \
 	set -e; \
-	for comp in $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS); do \
+	for comp in $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
 		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-		cd "$(MODULES_FOLDER)/$$comp"; \
-		$(GIT) branch; \
-		cd ../..; \
+		modules="$(MODULES_FOLDER)"; \
+		if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$$comp($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$$comp($$| ) ]]; then \
+			modules="$(EXTRA_MODULES_FOLDER)"; \
+		fi; \
+		if [[ -f "$$modules/$$comp/.git/config" ]]; then \
+			cd "$$modules/$$comp"; \
+			$(GIT) branch; \
+			cd $(WORKSPACE_DIR); \
+		fi; \
 	done; \
 	}
 
@@ -443,68 +527,113 @@ tools-build: __check-modules-dir
 	}
 
 .PHONY: components-build
-.HELP: components-build ## Build components modules only [[TARGET_COMPONENT] = component to build, [START_COMPONENT] = start build from component]
+.HELP: components-build ## Build components modules only [[TARGET] = component to build, [START] = start build from component][MODULES = base or extra, to filter module involved]
 components-build: __check-modules-dir
 	@{ \
 	set -e; \
 	$(call msgts,"[$@] Started at"); \
-	set -e; \
-	comps="$(COMPONENTS) $(COMPONENTS_COM)"; \
-	if [[ "$(TARGET_COMPONENT)" != "" ]] || [[ "$(START_COMPONENT)" != "" ]]; then \
-		comps=""; \
-		append=false; \
-		for comp in $(COMPONENTS) $(COMPONENTS_COM); do \
-			if [[ $$comp == "$(TARGET_COMPONENT)" ]]; then \
-				comps=$$comp; \
-				break; \
-			elif [[ $$comp == "$(START_COMPONENT)" ]]; then \
-				comps+="$$comp "; \
-				append=true; \
-			elif [[ $$append == "true" ]]; then \
-				comps+="$$comp "; \
-			fi; \
-		done; \
+	comps=""; \
+	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "base" ]]; then \
+		if [[ "$(TARGET)" != "" ]] || [[ "$(START)" != "" ]]; then \
+			bcomps=""; \
+			append=0; \
+			for comp in $(COMPONENTS) $(COMPONENTS_COM); do \
+				if [[ $$comp == "$(TARGET)" ]]; then \
+					bcomps=$$comp; \
+					break; \
+				elif [[ $$comp == "$(START)" ]]; then \
+					bcomps+="$$comp "; \
+					append=1; \
+				elif [[ $$append -eq 1 ]]; then \
+					bcomps+="$$comp "; \
+				fi; \
+			done; \
+			comps+="$$bcomps "; \
+		else \
+			comps+="$(COMPONENTS) $(COMPONENTS_COM) "; \
+		fi; \
+	fi; \
+	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "extra" ]]; then \
+		if [[ "$(TARGET)" != "" ]] || [[ "$(START)" != "" ]]; then \
+			ecomps=""; \
+			append=0; \
+			for comp in $(COMPONENTS_EXTRA); do \
+				if [[ $$comp == "$(TARGET)" ]]; then \
+					ecomps=$$comp; \
+					break; \
+				elif [[ $$comp == "$(START)" ]]; then \
+					ecomps+="$$comp "; \
+					append=1; \
+				elif [[ $$append -eq 1 ]]; then \
+					ecomps+="$$comp "; \
+				fi; \
+			done; \
+			comps+="$$ecomps "; \
+		else \
+			comps+="$(COMPONENTS_EXTRA) "; \
+		fi; \
 	fi; \
 	for comp in $$comps; do \
 		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-		$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __MODULE_BUILDS="MOD_BUILDS.$$comp" __BUILD_TYPE="$(BUILD_TYPE)" __module-build-foreach; \
+		$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __MODULE_BUILDS="MOD_BUILDS.$$comp" __BUILD_TYPE="$(BUILD_TYPE)" __BUILD_ARGS="$(ARGS)" __module-build-foreach; \
 		#$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __MODULE_BUILDARGS="MOD_BUILDARGS.$$comp" __BUILD_TYPE="$(BUILD_TYPE)" __module-build; \
 	done; \
 	$(call msgts,"[$@] Ended at"); \
 	}
 
 .PHONY: components-revertchanges
-.HELP: components-revertchanges ## Revert modifications in each component module
+.HELP: components-revertchanges ## Revert modifications in each component module [MODULES = base or extra, to filter module involved]
 components-revertchanges: __check-modules-dir
 	@{ \
 	set -e; \
-	for comp in $(COMPONENTS) $(COMPONENTS_COM); do \
+	comps=""; \
+	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "base" ]]; then \
+		comps+="$(COMPONENTS) $(COMPONENTS_COM) "; \
+	fi; \
+	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "extra" ]]; then \
+		comps+="$(COMPONENTS_EXTRA) "; \
+	fi; \
+	for comp in $$comps; do \
 		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
 		$(SUB-MAKE) __MODULE="$$comp" __module-revertchanges; \
 	done; \
 	}
 
 .PHONY: webapps-build
-.HELP: webapps-build ## Build webapps modules only
+.HELP: webapps-build ## Build webapps modules only [MODULES = base or extra, to filter module involved][ARGS = custom build args]
 webapps-build: __check-modules-dir __ensure-targetwars-dir
 	@{ \
 	set -e; \
 	$(call msgts,"[$@] Started at"); \
 	rm -f "$(TARGET_WARS_DIR)/*.*"; \
-	for comp in $(WEBAPPS); do \
+	comps=""; \
+	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "base" ]]; then \
+		comps+="$(WEBAPPS) "; \
+	fi; \
+	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "extra" ]]; then \
+		comps+="$(WEBAPPS_EXTRA) "; \
+	fi; \
+	for comp in $$comps; do \
 		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-		$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __MODULE_BUILDS="MOD_BUILDS.$$comp" __BUILD_TYPE="$(BUILD_TYPE)" __module-build-foreach; \
+		$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __MODULE_BUILDS="MOD_BUILDS.$$comp" __BUILD_TYPE="$(BUILD_TYPE)" __BUILD_ARGS="$(ARGS)" __module-build-foreach; \
 		#$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __MODULE_BUILDARGS="MOD_BUILDARGS.$$comp" __BUILD_TYPE="$(BUILD_TYPE)" __module-build; \
 	done; \
 	$(call msgts,"[$@] Ended at"); \
 	}
 
 .PHONY: webapps-revertchanges
-.HELP: webapps-revertchanges ## Revert modifications in each webapp modules (typical after setting versions)
+.HELP: webapps-revertchanges ## Revert modifications in each webapp modules (typical after setting versions) [MODULES = base or extra, to filter module involved]
 webapps-revertchanges: __check-modules-dir
 	@{ \
 	set -e; \
-	for comp in $(WEBAPPS); do \
+	comps=""; \
+	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "base" ]]; then \
+		comps+="$(WEBAPPS) "; \
+	fi; \
+	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "extra" ]]; then \
+		comps+="$(WEBAPPS_EXTRA) "; \
+	fi; \
+	for comp in $$comps; do \
 		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
 		$(SUB-MAKE) __MODULE="$$comp" __module-revertchanges; \
 	done; \
@@ -548,7 +677,6 @@ clean-localartifacts:
 	fi; \
 	$(call msgts,"[$@] Ended at"); \
 	}
-#com.sonicle.maven:sonicle-superpom
 
 # Call me as sub-make
 .PHONY: __tomcat-deploy
@@ -593,6 +721,10 @@ __module-build:
 		echo -e "'__MODULE' is empty"; \
 		exit 255; \
 	fi; \
+	modules="$(MODULES_FOLDER)"; \
+	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
+		modules="$(EXTRA_MODULES_FOLDER)"; \
+	fi; \
 	cmd="$(MVN) $(MVN_ARGS) clean install"; \
 	if [[ "$(__BUILD_TYPE)" == "production" ]] && [[ "$($(__MODULE_FLAGS))" == *"build-production"* ]]; then \
 		cmd+=" -P profile-production"; \
@@ -606,10 +738,9 @@ __module-build:
 		cmd+=" $(strip $($(__MODULE_BUILDARGS)))"; \
 	fi; \
 	if [[ ! -z "$(__BUILD_ARGS)" ]]; then \
-		cmd+=" $(strip $($(__BUILD_ARGS)))"; \
+		cmd+=" $(strip $(__BUILD_ARGS))"; \
 	fi; \
-	cd "$(MODULES_FOLDER)/$(__MODULE)"; \
-	#echo "$$cmd"; \
+	cd "$$modules/$(__MODULE)"; \
 	echo "$$cmd" && $$cmd; \
 	if [[ "$$?" -ne 0 ]]; then \
 		exit $$?; \
@@ -656,6 +787,10 @@ __module-merge:
 		echo -e "Variable '__SOURCE_BRANCH' is not defined"; \
 		exit 255; \
 	fi; \
+	modules="$(MODULES_FOLDER)"; \
+	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
+		modules="$(EXTRA_MODULES_FOLDER)"; \
+	fi; \
 	src_branch=""; \
 	if [[ "$(__SOURCE_BRANCH)" == "release" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
 		src_branch="release"; \
@@ -673,7 +808,7 @@ __module-merge:
 		dst_branch="master"; \
 	fi; \
 	if [[ src_branch != "" ]] && [[ dst_branch != "" ]]; then \
-		cd "$(MODULES_FOLDER)/$(__MODULE)"; \
+		cd "$$modules/$(__MODULE)"; \
 		$(GIT) checkout $$src_branch && $(GIT) pull; \
 		if [[ "$$?" -ne 0 ]]; then \
 			exit $$?; \
@@ -699,7 +834,11 @@ __module-revertchanges:
 		echo -e "'__MODULE' is empty"; \
 		exit 255; \
 	fi; \
-	cd "$(MODULES_FOLDER)/$(__MODULE)"; \
+	modules="$(MODULES_FOLDER)"; \
+	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
+		modules="$(EXTRA_MODULES_FOLDER)"; \
+	fi; \
+	cd "$$modules/$(__MODULE)"; \
 	$(GIT) clean -fd . && $(GIT) checkout -- .; \
 	if [[ "$$?" -ne 0 ]]; then \
 		exit $$?; \
@@ -720,7 +859,11 @@ __module-commit:
 		echo -e "'__COMMIT_MESSAGE' is empty"; \
 		exit 255; \
 	fi; \
-	cd "$(MODULES_FOLDER)/$(__MODULE)"; \
+	modules="$(MODULES_FOLDER)"; \
+	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
+		modules="$(EXTRA_MODULES_FOLDER)"; \
+	fi; \
+	cd "$$modules/$(__MODULE)"; \
 	$(GIT) add --all && $(GIT) commit -m "$(__COMMIT_MESSAGE)"; \
 	if [[ "$$?" -ne 0 ]]; then \
 		exit $$?; \
@@ -745,7 +888,11 @@ __module-tag:
 		echo -e "'__TAG_MESSAGE' is empty"; \
 		exit 255; \
 	fi; \
-	cd "$(MODULES_FOLDER)/$(__MODULE)"; \
+	modules="$(MODULES_FOLDER)"; \
+	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
+		modules="$(EXTRA_MODULES_FOLDER)"; \
+	fi; \
+	cd "$$modules/$(__MODULE)"; \
 	$(GIT) tag -a "$(__TAG_NAME)" -m "$(__TAG_MESSAGE)"; \
 	if [[ "$$?" -ne 0 ]]; then \
 		exit $$?; \
@@ -761,6 +908,10 @@ __module-pull:
 		echo -e "'__MODULE' is empty"; \
 		exit 255; \
 	fi; \
+	modules="$(MODULES_FOLDER)"; \
+	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
+		modules="$(EXTRA_MODULES_FOLDER)"; \
+	fi; \
 	branch=""; \
 	if [[ "$(__TARGET_BRANCH)" == "release" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
 		branch="release"; \
@@ -773,7 +924,7 @@ __module-pull:
 	fi; \
 	tag="$(__TARGET_TAG)"; \
 	if [[ "$$branch" != "" ]]; then \
-		cd "$(MODULES_FOLDER)/$(__MODULE)"; \
+		cd "$$modules/$(__MODULE)"; \
 		$(GIT) checkout $$branch && $(GIT) pull; \
 		if [[ "$$?" -ne 0 ]]; then \
 			exit $$?; \
@@ -796,6 +947,10 @@ __module-push:
 		echo -e "'__MODULE' is empty"; \
 		exit 255; \
 	fi; \
+	modules="$(MODULES_FOLDER)"; \
+	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
+		modules="$(EXTRA_MODULES_FOLDER)"; \
+	fi; \
 	remote="origin"; \
 	if [[ "$(__TARGET_REMOTE)" != "" ]]; then \
 		remote="$(__TARGET_REMOTE)"; \
@@ -810,7 +965,7 @@ __module-push:
 	else \
 		branch="$(__DEFAULT_BRANCH)"; \
 	fi; \
-	cd "$(MODULES_FOLDER)/$(__MODULE)"; \
+	cd "$$modules/$(__MODULE)"; \
 	if [[ "$$branch" != "" ]]; then \
 		if [[ "$(__PUSH_TAGS)" == "true" ]]; then \
 			$(GIT) checkout $$branch && $(GIT) push $$remote $$branch && $(GIT) push $$remote --tags -f; \
@@ -839,13 +994,13 @@ __module-push:
 __module-clone:
 	@{ \
 	set -e; \
-	if [[ "$(__MODULES_FOLDER)" == "" ]]; then \
-		echo -e "'__MODULES_FOLDER' is empty"; \
-		exit 255; \
-	fi; \
 	if [[ "$(__MODULE)" == "" ]]; then \
 		echo -e "'__MODULE' is empty"; \
 		exit 255; \
+	fi; \
+	modules="$(MODULES_FOLDER)"; \
+	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
+		modules="$(EXTRA_MODULES_FOLDER)"; \
 	fi; \
 	branch="master"; \
 	if [[ "$(__TARGET_BRANCH)" == "release" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
@@ -858,7 +1013,7 @@ __module-clone:
 		baseurl=$($(__MODULE_BASEURL)); \
 	fi; \
 	echo "$$baseurl/$(__MODULE).git"; \
-	$(GIT) clone -b $$branch $$baseurl/$(__MODULE).git "./$(__MODULES_FOLDER)/$(__MODULE)"; \
+	$(GIT) clone -b $$branch $$baseurl/$(__MODULE).git "./$$modules/$(__MODULE)"; \
 	if [[ "$$?" -ne 0 ]]; then \
 		exit $$?; \
 	fi; \
@@ -877,7 +1032,11 @@ __module-checkonbranch:
 		echo -e "'__TARGET_BRANCH' is empty"; \
 		exit 255; \
 	fi; \
-	cd "$(MODULES_FOLDER)/$(__MODULE)"; \
+	modules="$(MODULES_FOLDER)"; \
+	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
+		modules="$(EXTRA_MODULES_FOLDER)"; \
+	fi; \
+	cd "$$modules/$(__MODULE)"; \
 	branch=`$(GIT) rev-parse --abbrev-ref HEAD`; \
 	if [ "$$branch" != "$(__TARGET_BRANCH)" ]; then \
 		echo -e "Current branch MUST be '$(__TARGET_BRANCH)'"; \
