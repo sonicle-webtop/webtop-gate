@@ -503,7 +503,7 @@ modules-listbranch: __check-modules-dir
 	}
 
 .PHONY: build
-.HELP: build ## Build tools, components, webapps and servers modules
+.HELP: build ## Build components, webapps and servers modules
 build: tools-build components-build webapps-build servers-build
 
 .PHONY: tools-build
@@ -511,13 +511,21 @@ build: tools-build components-build webapps-build servers-build
 tools-build: __check-modules-dir
 	@{ \
 	set -e; \
-	$(call msgts,"[$@] Started at"); \
-	set -e; \
+	skip=1; \
 	for comp in $(TOOLS); do \
-		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-		$(SUB-MAKE) __MODULE="$$comp" __module-build; \
+		if [[ ! -d "$(MODULES_FOLDER)/$$comp/target" ]]; then \
+			skip=0; \
+			break; \
+		fi; \
 	done; \
-	$(call msgts,"[$@] Ended at"); \
+	if [[ $$skip -eq 0 ]]; then \
+		$(call msgts,"[$@] Started at"); \
+		for comp in $(TOOLS); do \
+			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
+			$(SUB-MAKE) __MODULE="$$comp" __module-build; \
+		done; \
+		$(call msgts,"[$@] Ended at"); \
+	fi; \
 	}
 
 .PHONY: components-build
