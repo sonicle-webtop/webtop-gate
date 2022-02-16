@@ -89,6 +89,10 @@ WEBAPPS_EXTRA :=
 DOCS := \
 docs
 
+CLEAN_ARTIFACTS_GROUPIDS := \
+com.sonicle.extjs \
+com.sonicle.webtop
+
 # ====================
 # Defines modules SCM URLs in order to clone projects. (see DEFAULT_CLONE_BASEURL below)
 # Every module has the following hidden default: DEFAULT_CLONE_BASEURL
@@ -161,7 +165,7 @@ MOD_FLAGS.webtop-webapp					:= git-develop,git-release,build-development,build-p
 #
 # Example:
 #  MOD_BUILDS_TGTFOLDER.mymodule.mybuild := $(shell pwd)/target-wars
-MOD_BUILDS_TGTFOLDER.webtop-webapp.default	:= $(TARGET_WARS_DIR)
+MOD_BUILDS_TGTFOLDER.webtop-webapp.default := $(TARGET_WARS_DIR)
 
 # ====================
 # Git keeps asking me for my ssh key passphrase?
@@ -678,14 +682,18 @@ clean-localartifacts:
 	repodir=`$(MVN) $(MVN_ARGS) help:evaluate -Dexpression=settings.localRepository -q -DforceStdout`; \
 	echo -e "Local repository is located at '$$repodir'"; \
 	if [[ -d "$$repodir" ]]; then \
-		echo -e "Cleaning 'com.sonicle.extjs:*' artifacts..."; \
-		rm -rf "$$repodir/com/sonicle/extjs"; \
-		echo -e "Cleaning 'com.sonicle.webtop:*' artifacts..."; \
-		rm -rf "$$repodir/com/sonicle/webtop"; \
+		for groupid in $(CLEAN_ARTIFACTS_GROUPIDS); do \
+			if [[ "$$groupid" != "." ]]; then \
+				echo -e "$(cYELLOW)Cleaning '$$groupid:*' artifacts...$(cRESET)"; \
+				path="$${groupid//.//}"; \
+				echo "$$repodir/$$path"; \
+			fi; \
+		done; \
 	fi; \
 	$(call msgts,"[$@] Ended at"); \
 	}
 
+#rm -rf "$$repodir/$$path"; \
 # Call me as sub-make
 .PHONY: __tomcat-deploy
 __tomcat-deploy:
