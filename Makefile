@@ -337,16 +337,13 @@ setup-modules: __setup-git __setup-folders
 	}
 
 .PHONY: checkout
-.HELP: checkout ## Updates each local module (except docs), keeping branch and pulling changes from respective remotes [MODULES = base or extra, to filter module involved]
+.HELP: checkout ## Updates each local module (except docs), keeping branch and pulling changes from respective remotes [EXTRA=1 for targetting extra modules]
 checkout: __check-modules-dir
 	@{ \
 	set -e; \
-	comps=""; \
-	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "base" ]]; then \
-		comps+="$(TOOLS) $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) "; \
-	fi; \
-	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "extra" ]]; then \
-		comps+="$(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA) "; \
+	comps="$(TOOLS) $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS)"; \
+	if [[ "$(EXTRA)" -eq 1 ]]; then \
+		comps="$(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA)"; \
 	fi; \
 	for comp in $$comps; do \
 		modules="$(MODULES_FOLDER)"; \
@@ -366,7 +363,7 @@ checkout: __check-modules-dir
 	}
 
 .PHONY: checkout-branch
-.HELP: checkout-branch ## Updates each local module (except docs and tools), switching to specified branch, if present, and pulling changes [BRANCH = branch to checkout][MODULES = base or extra, to filter module involved]
+.HELP: checkout-branch ## Updates each local module (except docs and tools), switching to specified branch, if present, and pulling changes [BRANCH=branch to checkout][EXTRA=1 for targetting extra modules]
 checkout-branch: __check-modules-dir
 	@{ \
 	set -e; \
@@ -374,12 +371,9 @@ checkout-branch: __check-modules-dir
 		echo -e "Parameter variable 'BRANCH' NOT defined"; \
 		exit 255; \
 	fi; \
-	comps=""; \
-	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "base" ]]; then \
-		comps+="$(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) "; \
-	fi; \
-	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "extra" ]]; then \
-		comps+="$(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA) "; \
+	comps="$(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS)"; \
+	if [[ "$(EXTRA)" -eq 1 ]]; then \
+		comps="$(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA)"; \
 	fi; \
 	for comp in $$comps; do \
 		modules="$(MODULES_FOLDER)"; \
@@ -394,7 +388,7 @@ checkout-branch: __check-modules-dir
 	}
 
 .PHONY: checkout-tag
-.HELP: checkout-tag ## Updates each local module (except docs and tools), switching to specified tag, if present [TAG = tag to checkout][MODULES = base or extra, to filter module involved]
+.HELP: checkout-tag ## Updates each local module (except docs and tools), switching to specified tag, if present [TAG=tag to checkout][EXTRA=1 for targetting extra modules]
 checkout-tag: __check-modules-dir
 	@{ \
 	set -e; \
@@ -402,12 +396,9 @@ checkout-tag: __check-modules-dir
 		echo -e "Parameter variable 'TAG' NOT defined"; \
 		exit 255; \
 	fi; \
-	comps=""; \
-	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "base" ]]; then \
-		comps+="$(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) "; \
-	fi; \
-	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "extra" ]]; then \
-		comps+="$(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA) "; \
+	comps="$(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS)"; \
+	if [[ "$(EXTRA)" -eq 1 ]]; then \
+		comps="$(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA)"; \
 	fi; \
 	for comp in $$comps; do \
 		modules="$(MODULES_FOLDER)"; \
@@ -424,16 +415,13 @@ checkout-tag: __check-modules-dir
 	}
 
 .PHONY: checkout-master
-.HELP: checkout-master ## Updates each local module (except docs and tools), switching to 'master' and pulling changes from respective remotes [MODULES = base or extra, to filter module involved]
+.HELP: checkout-master ## Updates each local module (except docs and tools), switching to 'master' and pulling changes from respective remotes [EXTRA=1 for targetting extra modules]
 checkout-master: __check-modules-dir
 	@{ \
 	set -e; \
-	comps=""; \
-	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "base" ]]; then \
-		comps+="$(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) "; \
-	fi; \
-	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "extra" ]]; then \
-		comps+="$(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA) "; \
+	comps="$(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS)"; \
+	if [[ "$(EXTRA)" -eq 1 ]]; then \
+		comps="$(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA)"; \
 	fi; \
 	for comp in $$comps; do \
 		modules="$(MODULES_FOLDER)"; \
@@ -450,16 +438,13 @@ checkout-master: __check-modules-dir
 	}
 
 .PHONY: checkout-develop
-.HELP: checkout-develop ## Updates each local module (except docs and tools), switching to 'develop' (if present) and pulling changes from respective remotes [MODULES = base or extra, to filter module involved]
+.HELP: checkout-develop ## Updates each local module (except docs and tools), switching to 'develop' (if present) and pulling changes from respective remotes [EXTRA=1 for targetting extra modules]
 checkout-develop: __check-modules-dir
 	@{ \
 	set -e; \
-	comps=""; \
-	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "base" ]]; then \
-		comps+="$(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) "; \
-	fi; \
-	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "extra" ]]; then \
-		comps+="$(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA) "; \
+	comps="$(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS)"; \
+	if [[ "$(EXTRA)" -eq 1 ]]; then \
+		comps="$(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA)"; \
 	fi; \
 	for comp in $$comps; do \
 		modules="$(MODULES_FOLDER)"; \
@@ -476,16 +461,13 @@ checkout-develop: __check-modules-dir
 	}
 
 .PHONY: checkout-release
-.HELP: checkout-release ## Updates each local module (except docs and tools), switching to 'release' (if present) and pulling changes from respective remotes [MODULES = base or extra, to filter module involved]
+.HELP: checkout-release ## Updates each local module (except docs and tools), switching to 'release' (if present) and pulling changes from respective remotes [EXTRA=1 for targetting extra modules]
 checkout-release: __check-modules-dir
 	@{ \
 	set -e; \
-	comps=""; \
-	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "base" ]]; then \
-		comps+="$(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) "; \
-	fi; \
-	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "extra" ]]; then \
-		comps+="$(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA) "; \
+	comps="$(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS)"; \
+	if [[ "$(EXTRA)" -eq 1 ]]; then \
+		comps="$(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA)"; \
 	fi; \
 	for comp in $$comps; do \
 		modules="$(MODULES_FOLDER)"; \
@@ -507,12 +489,12 @@ modules-listbranch: __check-modules-dir
 	@{ \
 	set -e; \
 	for comp in $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
-		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
 		modules="$(MODULES_FOLDER)"; \
 		if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$$comp($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$$comp($$| ) ]]; then \
 			modules="$(EXTRA_MODULES_FOLDER)"; \
 		fi; \
 		if [[ -f "$$modules/$$comp/.git/config" ]]; then \
+			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
 			cd "$$modules/$$comp"; \
 			$(GIT) branch; \
 			cd $(WORKSPACE_DIR); \
@@ -539,51 +521,31 @@ tools-build: __check-modules-dir
 	}
 
 .PHONY: components-build
-.HELP: components-build ## Build components modules only [[TARGET] = component to build, [START] = start build from component][MODULES = base or extra, to filter module involved]
+.HELP: components-build ## Build components modules only [TARGET=build only component, START=start build from][ARGS=custom build args][EXTRA=1 for targetting extra modules]
 components-build: __check-modules-dir
 	@{ \
 	set -e; \
 	$(call msgts,"[$@] Started at"); \
-	comps=""; \
-	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "base" ]]; then \
-		if [[ "$(TARGET)" != "" ]] || [[ "$(START)" != "" ]]; then \
-			bcomps=""; \
-			append=0; \
-			for comp in $(COMPONENTS) $(COMPONENTS_COM); do \
-				if [[ $$comp == "$(TARGET)" ]]; then \
-					bcomps=$$comp; \
-					break; \
-				elif [[ $$comp == "$(START)" ]]; then \
-					bcomps+="$$comp "; \
-					append=1; \
-				elif [[ $$append -eq 1 ]]; then \
-					bcomps+="$$comp "; \
-				fi; \
-			done; \
-			comps+="$$bcomps "; \
-		else \
-			comps+="$(COMPONENTS) $(COMPONENTS_COM) "; \
-		fi; \
+	xcomps="$(COMPONENTS) $(COMPONENTS_COM)"; \
+	if [[ "$(EXTRA)" -eq 1 ]]; then \
+		xcomps="$(COMPONENTS_EXTRA)"; \
 	fi; \
-	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "extra" ]]; then \
-		if [[ "$(TARGET)" != "" ]] || [[ "$(START)" != "" ]]; then \
-			ecomps=""; \
-			append=0; \
-			for comp in $(COMPONENTS_EXTRA); do \
-				if [[ $$comp == "$(TARGET)" ]]; then \
-					ecomps=$$comp; \
-					break; \
-				elif [[ $$comp == "$(START)" ]]; then \
-					ecomps+="$$comp "; \
-					append=1; \
-				elif [[ $$append -eq 1 ]]; then \
-					ecomps+="$$comp "; \
-				fi; \
-			done; \
-			comps+="$$ecomps "; \
-		else \
-			comps+="$(COMPONENTS_EXTRA) "; \
-		fi; \
+	comps=""; \
+	if [[ "$(TARGET)" != "" ]] || [[ "$(START)" != "" ]]; then \
+		append=0; \
+		for xcomp in $$xcomps; do \
+			if [[ $$append -eq 1 ]]; then \
+				comps+="$$xcomp "; \
+			elif [[ $$xcomp == "$(TARGET)" ]]; then \
+				comps="$$xcomp"; \
+				break; \
+			elif [[ $$xcomp == "$(START)" ]]; then \
+				comps="$$xcomp"; \
+				append=1; \
+			fi; \
+		done; \
+	else \
+		comps="$$xcomps"; \
 	fi; \
 	for comp in $$comps; do \
 		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
@@ -594,16 +556,13 @@ components-build: __check-modules-dir
 	}
 
 .PHONY: components-revertchanges
-.HELP: components-revertchanges ## Revert modifications in each component module [MODULES = base or extra, to filter module involved]
+.HELP: components-revertchanges ## Revert modifications in each component module [EXTRA=1 for targetting extra modules]
 components-revertchanges: __check-modules-dir
 	@{ \
 	set -e; \
-	comps=""; \
-	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "base" ]]; then \
-		comps+="$(COMPONENTS) $(COMPONENTS_COM) "; \
-	fi; \
-	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "extra" ]]; then \
-		comps+="$(COMPONENTS_EXTRA) "; \
+	comps="$(COMPONENTS) $(COMPONENTS_COM)"; \
+	if [[ "$(EXTRA)" -eq 1 ]]; then \
+		comps="$(COMPONENTS_EXTRA)"; \
 	fi; \
 	for comp in $$comps; do \
 		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
@@ -612,18 +571,15 @@ components-revertchanges: __check-modules-dir
 	}
 
 .PHONY: webapps-build
-.HELP: webapps-build ## Build webapps modules only [MODULES = base or extra, to filter module involved][ARGS = custom build args]
+.HELP: webapps-build ## Build webapps modules only [ARGS=custom build args][EXTRA=1, for targetting extra modules]
 webapps-build: __check-modules-dir __ensure-targetwars-dir
 	@{ \
 	set -e; \
 	$(call msgts,"[$@] Started at"); \
 	rm -f "$(TARGET_WARS_DIR)/*.*"; \
-	comps=""; \
-	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "base" ]]; then \
-		comps+="$(WEBAPPS) "; \
-	fi; \
-	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "extra" ]]; then \
-		comps+="$(WEBAPPS_EXTRA) "; \
+	comps="$(WEBAPPS)"; \
+	if [[ "$(EXTRA)" -eq 1 ]]; then \
+		comps="$(WEBAPPS_EXTRA)"; \
 	fi; \
 	for comp in $$comps; do \
 		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
@@ -634,16 +590,13 @@ webapps-build: __check-modules-dir __ensure-targetwars-dir
 	}
 
 .PHONY: webapps-revertchanges
-.HELP: webapps-revertchanges ## Revert modifications in each webapp modules (typical after setting versions) [MODULES = base or extra, to filter module involved]
+.HELP: webapps-revertchanges ## Revert modifications in each webapp modules (typical after setting versions) [EXTRA=1 for targetting extra modules]
 webapps-revertchanges: __check-modules-dir
 	@{ \
 	set -e; \
-	comps=""; \
-	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "base" ]]; then \
-		comps+="$(WEBAPPS) "; \
-	fi; \
-	if [[ -z "$(MODULES)" ]] || [[ "$(MODULES)" == "extra" ]]; then \
-		comps+="$(WEBAPPS_EXTRA) "; \
+	comps="$(WEBAPPS)"; \
+	if [[ "$(EXTRA)" -eq 1 ]]; then \
+		comps="$(WEBAPPS_EXTRA)"; \
 	fi; \
 	for comp in $$comps; do \
 		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
@@ -674,7 +627,7 @@ servers-build: __check-modules-dir __ensure-targetservers-dir
 	}
 
 .PHONY: clean-localartifacts
-.HELP: clean-localartifacts ## Cleans local Maven artifacts involved in this build (you MUST run a full-build after executing this)
+.HELP: clean-localartifacts ## Cleans local Maven artifacts involved in this build (you MUST run a full-build after executing this) [DRY=1 to make a dry run]
 clean-localartifacts:
 	@{ \
 	set -e; \
@@ -686,14 +639,17 @@ clean-localartifacts:
 			if [[ "$$groupid" != "." ]]; then \
 				echo -e "$(cYELLOW)Cleaning '$$groupid:*' artifacts...$(cRESET)"; \
 				path="$${groupid//.//}"; \
-				echo "$$repodir/$$path"; \
+				if [[ "$(DRY)" -eq 1 ]]; then \
+					echo "rm -rf $$repodir/$$path"; \
+				else \
+					rm -rf "$$repodir/$$path"; \
+				fi; \
 			fi; \
 		done; \
 	fi; \
 	$(call msgts,"[$@] Ended at"); \
 	}
 
-#rm -rf "$$repodir/$$path"; \
 # Call me as sub-make
 .PHONY: __tomcat-deploy
 __tomcat-deploy:
