@@ -535,7 +535,7 @@ components-build: __check-modules-dir
 		append=0; \
 		for xcomp in $$xcomps; do \
 			if [[ $$append -eq 1 ]]; then \
-				comps+="$$xcomp "; \
+				comps+=" $$xcomp"; \
 			elif [[ $$xcomp == "$(TARGET)" ]]; then \
 				comps="$$xcomp"; \
 				break; \
