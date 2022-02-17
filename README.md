@@ -110,7 +110,7 @@ DEFAULT_CLONE_BASEURL=https://git.example.com
 
 ```
 make <desired-target> \
-DEFAULT_GIT_BRANCH=develop
+DEFAULT_BASE_BRANCH=develop
 ```
 
 *Add new module, specifying clone URL and module-flags (see comments into Makefile for flags documentation)*
