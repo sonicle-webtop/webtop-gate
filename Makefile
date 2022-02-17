@@ -328,7 +328,7 @@ setup-modules: __setup-git __setup-folders
 		if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$$comp($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$$comp($$| ) ]]; then \
 			modules="$(EXTRA_MODULES_FOLDER)"; \
 			basebranch="$(DEFAULT_BASE_BRANCH_EXTRA)"; \
-		fi; \		
+		fi; \
 		if [ ! -d "$$modules/$$comp" ]; then \
 			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
 			$(SUB-MAKE) __MODULE="$$comp" __MODULE_BASEURL="MOD_CLONEBASEURL.$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="$$basebranch" __module-clone; \
