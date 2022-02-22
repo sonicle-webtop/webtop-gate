@@ -1026,6 +1026,72 @@ __module-checkonbranch:
 	}
 
 # Call me as sub-make
+.PHONY: __module-addremote
+__module-addremote:
+	@{ \
+	set -e; \
+	if [[ -z "$(__MODULE)" ]]; then \
+		echo -e "'__MODULE' is empty"; \
+		exit 255; \
+	fi; \
+	if [[ -z "$(__REMOTE_NAME)" ]]; then \
+		echo -e "'__REMOTE_NAME' is empty"; \
+		exit 255; \
+	fi; \
+	if [[ -z "$(__DEFAULT_REMOTE_BASEURL)" ]]; then \
+		echo -e "'__DEFAULT_REMOTE_BASEURL' is empty"; \
+		exit 255; \
+	fi; \
+	modules="$(MODULES_FOLDER)"; \
+	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
+		modules="$(EXTRA_MODULES_FOLDER)"; \
+	fi; \
+	baseurl="$(__DEFAULT_REMOTE_BASEURL)"; \
+	if [[ ! -z "$($(__MODULE_REMOTE_BASEURL))" ]]; then \
+		baseurl=$($(__MODULE_REMOTE_BASEURL)); \
+	fi; \
+	repo="$(__MODULE)"; \
+	if [[ ! -z "$($(__MODULE_REMOTE_REPO))" ]]; then \
+		repo=$($(__MODULE_REMOTE_REPO)); \
+	fi; \
+	cd "$$modules/$(__MODULE)"; \
+	set +e; \
+	$(GIT) remote add $(__REMOTE_NAME) $$baseurl/$$repo.git; \
+	if [[ "$$?" -ne 0 ]]; then \
+		exit $$?; \
+	fi; \
+	set -e; \
+	cd ../..; \
+	}
+
+# Call me as sub-make
+.PHONY: __module-removeremote
+__module-removeremote:
+	@{ \
+	set -e; \
+	if [[ -z "$(__MODULE)" ]]; then \
+		echo -e "'__MODULE' is empty"; \
+		exit 255; \
+	fi; \
+	if [[ -z "$(__REMOTE_NAME)" ]]; then \
+		echo -e "'__REMOTE_NAME' is empty"; \
+		exit 255; \
+	fi; \
+	modules="$(MODULES_FOLDER)"; \
+	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
+		modules="$(EXTRA_MODULES_FOLDER)"; \
+	fi; \
+	cd "$$modules/$(__MODULE)"; \
+	set +e; \
+	$(GIT) remote remove $(__REMOTE_NAME); \
+	if [[ "$$?" -ne 0 ]]; then \
+		exit $$?; \
+	fi; \
+	set -e; \
+	cd ../..; \
+	}
+
+# Call me as sub-make
 .PHONY: __gitlfs-pullpointer
 __gitlfs-pullpointer:
 	@{ \
