@@ -103,7 +103,8 @@ NB: you can perform a one-time operation using only `build` target.
 
 ```
 make <desired-target> \
-DEFAULT_CLONE_BASEURL=https://git.example.com
+DEFAULT_CLONE_BASEURL=https://git.example.com \
+DEFAULT_MVNTOOLS_CLONE_BASEURL=https://git2.example.com
 ```
 
 *Change default initial branch*
