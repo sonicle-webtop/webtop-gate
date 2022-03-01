@@ -38,11 +38,11 @@ cWHITE := \x1b[37m
 # ====================
 # Modules definition
 
-TOOLS := \
-minify-maven-plugin
+MVNTOOLS := \
+minify-maven-plugin \
+sonicle-superpom
 
 COMPONENTS := \
-sonicle-superpom \
 sonicle-superpom-senchapkg \
 sonicle-commons \
 sonicle-commons-web \
@@ -94,10 +94,8 @@ com.sonicle.extjs \
 com.sonicle.webtop
 
 # ====================
-# Defines modules SCM URLs in order to clone projects. (see DEFAULT_CLONE_BASEURL below)
-# Every module has the following hidden default: DEFAULT_CLONE_BASEURL
-MOD_CLONEBASEURL.minify-maven-plugin := https://github.com/sonicle
-MOD_CLONEBASEURL.sonicle-superpom := https://github.com/sonicle
+# Defines modules SCM URLs in order to clone projects. (see DEFAULT_CLONE_BASEURL or DEFAULT_MVNTOOLS_CLONE_BASEURL below)
+# Every module relies on the following hidden defaults: DEFAULT_CLONE_BASEURL and DEFAULT_MVNTOOLS_CLONE_BASEURL
 
 # ====================
 # Defines modules flags, characterizing each module in a different manner.
@@ -187,6 +185,9 @@ ifeq ($(DEFAULT_BASE_BRANCH_EXTRA),)
 endif
 ifeq ($(DEFAULT_CLONE_BASEURL),)
 	DEFAULT_CLONE_BASEURL := https://github.com/sonicle-webtop
+endif
+ifeq ($(DEFAULT_MVNTOOLS_CLONE_BASEURL),)
+	DEFAULT_MVNTOOLS_CLONE_BASEURL := https://github.com/sonicle
 endif
 ifeq ($(DEFAULT_SENCHATOOLS_VERSION),)
 	DEFAULT_SENCHATOOLS_VERSION :=
@@ -322,7 +323,7 @@ setup-senchatools-links: __check-modules-dir
 setup-modules: __setup-git __setup-folders
 	@{ \
 	set -e; \
-	for comp in $(TOOLS) $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(DOCS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
+	for comp in $(MVNTOOLS) $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(DOCS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
 		modules="$(MODULES_FOLDER)"; \
 		basebranch="$(DEFAULT_BASE_BRANCH)"; \
 		if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$$comp($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$$comp($$| ) ]]; then \
@@ -341,7 +342,7 @@ setup-modules: __setup-git __setup-folders
 checkout: __check-modules-dir
 	@{ \
 	set -e; \
-	comps="$(TOOLS) $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS)"; \
+	comps="$(MVNTOOLS) $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS)"; \
 	if [[ "$(EXTRA)" -eq 1 ]]; then \
 		comps="$(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA)"; \
 	fi; \
@@ -511,21 +512,12 @@ build: tools-build components-build webapps-build servers-build
 tools-build: __check-modules-dir
 	@{ \
 	set -e; \
-	skip=1; \
-	for comp in $(TOOLS); do \
-		if [[ ! -d "$(MODULES_FOLDER)/$$comp/target" ]]; then \
-			skip=0; \
-			break; \
-		fi; \
+	$(call msgts,"[$@] Started at"); \
+	for comp in $(MVNTOOLS); do \
+		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
+		$(SUB-MAKE) __MODULE="$$comp" __module-build; \
 	done; \
-	if [[ $$skip -eq 0 ]]; then \
-		$(call msgts,"[$@] Started at"); \
-		for comp in $(TOOLS); do \
-			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-			$(SUB-MAKE) __MODULE="$$comp" __module-build; \
-		done; \
-		$(call msgts,"[$@] Ended at"); \
-	fi; \
+	$(call msgts,"[$@] Ended at"); \
 	}
 
 .PHONY: components-build
@@ -989,6 +981,9 @@ __module-clone:
 		branch="develop"; \
 	fi; \
 	baseurl=$(DEFAULT_CLONE_BASEURL); \
+	if [[ "$(MVNTOOLS)" =~ (^| )$(__MODULE)($$| ) ]]; then \
+		baseurl=$(DEFAULT_MVNTOOLS_CLONE_BASEURL); \
+	fi; \
 	if [[ "$($(__MODULE_BASEURL))" != "" ]]; then \
 		baseurl=$($(__MODULE_BASEURL)); \
 	fi; \
