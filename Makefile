@@ -250,7 +250,7 @@ setup-senchatools:
 	@{ \
 	set -e; \
 	use_lfs=0; \
-	if [[ -f "$(WORKSPACE_DIR)/.git/config" ]] && [[ $(USE_LFS) -ne 0 ]]; then \
+	if [[ -f "$(WORKSPACE_DIR)/.git/config" ]] && [[ "$(USE_LFS)" -ne 0 ]]; then \
 		use_lfs=1; \
 		$(GIT) lfs install; \
 	fi; \
