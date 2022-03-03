@@ -174,6 +174,9 @@ MOD_BUILDS_TGTFOLDER.webtop-webapp.default := $(TARGET_WARS_DIR)
 # - Start SSH Agent
 #   ssh-add ~/.ssh/id_rsa
 
+ifeq ($(GATEFILES_BASEURL),)
+	GATEFILES_BASEURL := https://github.com/sonicle-webtop/webtop-gate-files
+endif
 ifeq ($(BUILD_TYPE),)
 	BUILD_TYPE := production
 endif
@@ -238,17 +241,17 @@ help:
 ##@echo -e "$$($(GREP) -hE '^.HELP:.*##' $(MAKEFILE_LIST) | sort | $(SED) -e 's/^\.HELP:\s*//' -e 's/\s*##\s*/:/' -e 's/^\(.\+\):\(.*\)/\\x1b[36m\1\\x1b[m:\2/' | column -c2 -t -s :)"
 
 .PHONY: setup
-.HELP: setup ## Setup the entire build workspace - clone required modules and prepare SenchaTools
+.HELP: setup ## Setup the entire build workspace - clone required modules and prepare SenchaTools [USE_LFS=0 to disable GitLFS]
 setup: setup-modules setup-senchatools
 
 .PHONY: setup-senchatools
-.HELP: setup-senchatools ## Prepare SenchaTools (Cmd and workspace for ExtJS), they will be available into 'sencha-XXX' folder [[SENCHATOOLS_VERSION] = prepare only specific tools version]
+.HELP: setup-senchatools ## Prepare SenchaTools (Cmd and workspace for ExtJS), they will be available into 'sencha-XXX' folder [USE_LFS=0 to disable GitLFS][SENCHATOOLS_VERSION=prepare only specific tools version]
 setup-senchatools:
 	@{ \
 	set -e; \
-	is_git=0; \
-	if [[ -f "$(WORKSPACE_DIR)/.git/config" ]]; then \
-		is_git=1; \
+	use_lfs=0; \
+	if [[ -f "$(WORKSPACE_DIR)/.git/config" ]] && [[ $(USE_LFS) -ne 0 ]]; then \
+		use_lfs=1; \
 		$(GIT) lfs install; \
 	fi; \
 	version="$(DEFAULT_SENCHATOOLS_VERSION)"; \
@@ -265,9 +268,12 @@ setup-senchatools:
 		wksp_filename="senchatools-workspace-750.tar.bz2"; \
 		cmd_filename="senchatools-cmd-750$$ossuffix.tar.bz2"; \
 		echo -e "$(cCYAN)[senchatools-750]$(cRESET)"; \
-		if [[ $$is_git -eq 1 ]]; then \
+		if [[ $$use_lfs -eq 1 ]]; then \
 			$(SUB-MAKE) __TARGET_FILE="$(FILES_DIRNAME)/$$wksp_filename" __gitlfs-pullpointer; \
 			$(SUB-MAKE) __TARGET_FILE="$(FILES_DIRNAME)/$$cmd_filename" __gitlfs-pullpointer; \
+		else \
+			wget -O "$(FILES_DIRNAME)/$$wksp_filename" "$(GATEFILES_BASEURL)/raw/master/files/$$wksp_filename"; \
+			wget -O "$(FILES_DIRNAME)/$$cmd_filename" "$(GATEFILES_BASEURL)/raw/master/files/$$cmd_filename"; \
 		fi; \
 		$(SUB-MAKE) __SENCHATOOLS_TGTFOLDERNAME="sencha-750" __SENCHATOOLS_WKSP_ARCHIVENAME="$$wksp_filename" __SENCHATOOLS_CMD_ARCHIVENAME="$$cmd_filename" __SENCHATOOLS_TGTPROP="sencha75" __extract-senchatools; \
 	fi; \
@@ -275,9 +281,12 @@ setup-senchatools:
 		wksp_filename="senchatools-workspace-620.tar.bz2"; \
 		cmd_filename="senchatools-cmd-750$$ossuffix.tar.bz2"; \
 		echo -e "$(cCYAN)[senchatools-620]$(cRESET)"; \
-		if [[ $$is_git -eq 1 ]]; then \
+		if [[ $$use_lfs -eq 1 ]]; then \
 			$(SUB-MAKE) __TARGET_FILE="$(FILES_DIRNAME)/$$wksp_filename" __gitlfs-pullpointer; \
 			$(SUB-MAKE) __TARGET_FILE="$(FILES_DIRNAME)/$$cmd_filename" __gitlfs-pullpointer; \
+		else \
+			wget -O "$(FILES_DIRNAME)/$$wksp_filename" "$(GATEFILES_BASEURL)/raw/master/files/$$wksp_filename"; \
+			wget -O "$(FILES_DIRNAME)/$$cmd_filename" "$(GATEFILES_BASEURL)/raw/master/files/$$cmd_filename"; \
 		fi; \
 		$(SUB-MAKE) __SENCHATOOLS_TGTFOLDERNAME="sencha-620" __SENCHATOOLS_WKSP_ARCHIVENAME="$$wksp_filename" __SENCHATOOLS_CMD_ARCHIVENAME="$$cmd_filename" __SENCHATOOLS_TGTPROP="sencha" __extract-senchatools; \
 	fi; \
@@ -1182,8 +1191,8 @@ __extract-senchatools:
 			toolsfolder_real=$${toolsfolder_real//\\//}; \
 		fi; \
 		if [[ ! -f "$$propfile" ]]; then \
-			echo "sencha.cmd=$$toolsfolder_real/cmd" > $$propfile; \
-			echo "sencha.workspace=$$toolsfolder_real/workspace" >> $$propfile; \
+			echo "sencha.cmd=$$toolsfolder_real/cmd" > "$$propfile"; \
+			echo "sencha.workspace=$$toolsfolder_real/workspace" >> "$$propfile"; \
 			echo -e "Properties 'sencha.cmd' and 'sencha.workspace' written to '$$propfile' file."; \
 		else \
 			echo -e "File '$$propfile' already exists."; \

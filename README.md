@@ -1,6 +1,17 @@
 # Building WebTop
 
-This allows to prepare a building environment suitable for building all WebTop's repositories and produce the application war file for deployment. See [Cloning this repository](#cloning-this-repository) for more info about this.
+This allows to prepare a building environment suitable for building all WebTop's repositories and produce the application war file for deployment.
+
+## Cloning this repository
+
+This repository make use of LFS to store some heavy tools (around ~150MB) packed as archive files (see `files` folder).
+If you don't want to clone above archives right away or if you have problems with overquota errors, you need to invoke `git` command with specific variable:
+
+```
+GIT_LFS_SKIP_SMUDGE=1 git clone <this-repository-url>
+```
+
+LFS clone may already be skipped on system if `git-lfs` was originally installed with `--skip-smudge` option or if smudge configs were set as global.
 
 ## Requirements
 
@@ -9,20 +20,36 @@ This allows to prepare a building environment suitable for building all WebTop's
 - `Maven` (>= 3.5.x, < 3.7)
 - `Java JDK` (= 1.8.x)
 - `NodeJS` (= 8.x)
-- `make`, `awk`, `tar`, `bzip2`, `grep`, `sed` commands available on system
+- `make`, `awk`, `tar`, `bzip2`, `grep`, `sed`, `wget` commands available on system
 
 You can run this on Windows systems through [Cygwin](https://www.cygwin.com/) but you have make sure to not install `git` commands in Cygwin, so both environments will share same executables under your main Windows OS. Finally, if you have any ssh keys to access sub-modules repositories, remember to copy or link them under your Cygwin's .ssh home, making them available to Cygwin environment also.
 
-## Cloning this repository
+## Makefile's targets overview
 
-This repository make use of LFS to store some heavy tools (around ~150MB) packed as archive files (see `files` folder).
-If you don't want to clone above archives right away, you need to invoke `git` command with specific variable:
+If you simply issue `make` command, an help section will be shown describing all available targets.
+
+## Preparing your workspace
+
+Target `setup-module` will help you to clone all modules into your workspace.
 
 ```
-GIT_LFS_SKIP_SMUDGE=1 git clone <this-repository-url>
+make setup-modules
 ```
 
-LFS clone may already be skipped on system if `git-lfs` was originally installed with `--skip-smudge` option or if smudge configs were set as global.
+Once finished, you can find them into default `components` sub-folder.
+If you want to keep modules updated, you can periodically use the `checkout` target.
+
+Next, you have to prepare the workspace for Sencha builds and a set of tools to perform them:
+
+```
+make setup-senchatools
+```
+
+By default, current tools will be extracted under `sencha` sub-folder.
+
+NB: you can perform a one-time operation using only `setup` target.
+
+## Execute build
 
 ### Fix JasperReports mirrors
 
@@ -51,29 +78,6 @@ Please add the configuration below to your `settings.xml` file under your `.m2` 
         </mirrors>
 </settings>
 ```
-
-## Preparing your workspace
-
-Target `setup-module` will help you to clone all modules into your workspace.
-
-```
-make setup-modules
-```
-
-Once finished, you can find them into default `components` sub-folder.
-If you want to keep modules updated, you can periodically use the `checkout` target.
-
-Next, you have to prepare the workspace for Sencha builds and a set of tools to perform them:
-
-```
-make setup-senchatools
-```
-
-By default, current tools will be extracted under `sencha` sub-folder.
-
-NB: you can perform a one-time operation using only `setup` target.
-
-## Execute build
 
 You can start building component modules by issuing the following command:
 
