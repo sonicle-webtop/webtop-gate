@@ -36,13 +36,16 @@ Target `setup-module` will help you to clone all modules into your workspace.
 make setup-modules
 ```
 
-Once finished, you can find them into default `components` sub-folder.
+Once finished, you can find them into default `modules` sub-folder.
 If you want to keep modules updated, you can periodically use the `checkout` target.
 
 Next, you have to prepare the workspace for Sencha builds and a set of tools to perform them:
 
 ```
 make setup-senchatools
+
+# If you want do disable GitLFS and download using wget you can use the USE_LFS variable like below
+make setup-senchatools USE_LFS=0
 ```
 
 By default, current tools will be extracted under `sencha` sub-folder.
