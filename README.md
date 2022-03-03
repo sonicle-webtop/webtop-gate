@@ -13,6 +13,8 @@ GIT_LFS_SKIP_SMUDGE=1 git clone <this-repository-url>
 
 LFS clone may already be skipped on system if `git-lfs` was originally installed with `--skip-smudge` option or if smudge configs were set as global.
 
+For backward compatibility, same files are also published [here](https://github.com/sonicle-webtop/webtop-gate-files) in a standard repository with no LFS usage.
+
 ## Requirements
 
 - System with minimum 2GB of RAM and enough disk space
