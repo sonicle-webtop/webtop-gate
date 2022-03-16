@@ -241,11 +241,11 @@ help:
 ##@echo -e "$$($(GREP) -hE '^.HELP:.*##' $(MAKEFILE_LIST) | sort | $(SED) -e 's/^\.HELP:\s*//' -e 's/\s*##\s*/:/' -e 's/^\(.\+\):\(.*\)/\\x1b[36m\1\\x1b[m:\2/' | column -c2 -t -s :)"
 
 .PHONY: setup
-.HELP: setup ## Setup the entire build workspace - clone required modules and prepare SenchaTools [USE_LFS=0 to disable GitLFS]
+.HELP: setup ## Setup the entire build workspace - clone required modules and prepare SenchaTools [USE_LFS=0, to disable GitLFS]
 setup: setup-modules setup-senchatools
 
 .PHONY: setup-senchatools
-.HELP: setup-senchatools ## Prepare SenchaTools (Cmd and workspace for ExtJS), they will be available into 'sencha-XXX' folder [USE_LFS=0 to disable GitLFS][SENCHATOOLS_VERSION=prepare only specific tools version]
+.HELP: setup-senchatools ## Prepare SenchaTools (Cmd and workspace for ExtJS), they will be available into 'sencha-XXX' folder [USE_LFS=0, to disable GitLFS][SENCHATOOLS_VERSION=prepare only specific tools version]
 setup-senchatools:
 	@{ \
 	set -e; \
@@ -293,7 +293,7 @@ setup-senchatools:
 	}
 
 .PHONY: setup-senchatools-links
-.HELP: setup-senchatools-links ## Prepare SenchaTools - (do NOT use) setup symlinks for ExtJS package [[TARGET_SENCHATOOLS_FOLDER] = senchatools folder-name in which create links]
+.HELP: setup-senchatools-links ## Prepare SenchaTools - (do NOT use) setup symlinks for ExtJS package [TARGET_SENCHATOOLS_FOLDER=senchatools folder-name in which create links]
 setup-senchatools-links: __check-modules-dir
 	@{ \
 	set -e; \
@@ -347,7 +347,7 @@ setup-modules: __setup-git __setup-folders
 	}
 
 .PHONY: checkout
-.HELP: checkout ## Updates each local module (except docs), keeping branch and pulling changes from respective remotes [EXTRA=1 for targetting extra modules]
+.HELP: checkout ## Updates each local module (except docs), keeping branch and pulling changes from respective remotes [EXTRA=1, to target extra modules]
 checkout: __check-modules-dir
 	@{ \
 	set -e; \
@@ -373,7 +373,7 @@ checkout: __check-modules-dir
 	}
 
 .PHONY: checkout-branch
-.HELP: checkout-branch ## Updates each local module (except docs and tools), switching to specified branch, if present, and pulling changes [BRANCH=branch to checkout][EXTRA=1 for targetting extra modules]
+.HELP: checkout-branch ## Updates each local module (except docs and tools), switching to specified branch, if present, and pulling changes [BRANCH=branch to checkout][EXTRA=1, to target extra modules]
 checkout-branch: __check-modules-dir
 	@{ \
 	set -e; \
@@ -398,7 +398,7 @@ checkout-branch: __check-modules-dir
 	}
 
 .PHONY: checkout-tag
-.HELP: checkout-tag ## Updates each local module (except docs and tools), switching to specified tag, if present [TAG=tag to checkout][EXTRA=1 for targetting extra modules]
+.HELP: checkout-tag ## Updates each local module (except docs and tools), switching to specified tag, if present [TAG=tag to checkout][EXTRA=1, to target extra modules]
 checkout-tag: __check-modules-dir
 	@{ \
 	set -e; \
@@ -425,7 +425,7 @@ checkout-tag: __check-modules-dir
 	}
 
 .PHONY: checkout-master
-.HELP: checkout-master ## Updates each local module (except docs and tools), switching to 'master' and pulling changes from respective remotes [EXTRA=1 for targetting extra modules]
+.HELP: checkout-master ## Updates each local module (except docs and tools), switching to 'master' and pulling changes from respective remotes [EXTRA=1, to target extra modules]
 checkout-master: __check-modules-dir
 	@{ \
 	set -e; \
@@ -448,7 +448,7 @@ checkout-master: __check-modules-dir
 	}
 
 .PHONY: checkout-develop
-.HELP: checkout-develop ## Updates each local module (except docs and tools), switching to 'develop' (if present) and pulling changes from respective remotes [EXTRA=1 for targetting extra modules]
+.HELP: checkout-develop ## Updates each local module (except docs and tools), switching to 'develop' (if present) and pulling changes from respective remotes [EXTRA=1, to target extra modules]
 checkout-develop: __check-modules-dir
 	@{ \
 	set -e; \
@@ -471,7 +471,7 @@ checkout-develop: __check-modules-dir
 	}
 
 .PHONY: checkout-release
-.HELP: checkout-release ## Updates each local module (except docs and tools), switching to 'release' (if present) and pulling changes from respective remotes [EXTRA=1 for targetting extra modules]
+.HELP: checkout-release ## Updates each local module (except docs and tools), switching to 'release' (if present) and pulling changes from respective remotes [EXTRA=1, to target extra modules]
 checkout-release: __check-modules-dir
 	@{ \
 	set -e; \
@@ -530,7 +530,7 @@ tools-build: __check-modules-dir
 	}
 
 .PHONY: components-build
-.HELP: components-build ## Build components modules only [TARGET=build only component, START=start build from][ARGS=custom build args][EXTRA=1 for targetting extra modules]
+.HELP: components-build ## Build components modules only [TARGET=build only component, START=start build from][ARGS=custom build args][EXTRA=1, to target extra modules]
 components-build: __check-modules-dir
 	@{ \
 	set -e; \
@@ -565,7 +565,7 @@ components-build: __check-modules-dir
 	}
 
 .PHONY: components-revertchanges
-.HELP: components-revertchanges ## Revert modifications in each component module [EXTRA=1 for targetting extra modules]
+.HELP: components-revertchanges ## Revert modifications in each component module [EXTRA=1, to target extra modules]
 components-revertchanges: __check-modules-dir
 	@{ \
 	set -e; \
@@ -580,7 +580,7 @@ components-revertchanges: __check-modules-dir
 	}
 
 .PHONY: webapps-build
-.HELP: webapps-build ## Build webapps modules only [ARGS=custom build args][EXTRA=1, for targetting extra modules]
+.HELP: webapps-build ## Build webapps modules only [ARGS=custom build args][EXTRA=1, to target extra modules]
 webapps-build: __check-modules-dir __ensure-targetwars-dir
 	@{ \
 	set -e; \
@@ -599,7 +599,7 @@ webapps-build: __check-modules-dir __ensure-targetwars-dir
 	}
 
 .PHONY: webapps-revertchanges
-.HELP: webapps-revertchanges ## Revert modifications in each webapp modules (typical after setting versions) [EXTRA=1 for targetting extra modules]
+.HELP: webapps-revertchanges ## Revert modifications in each webapp modules (typical after setting versions) [EXTRA=1, to target extra modules]
 webapps-revertchanges: __check-modules-dir
 	@{ \
 	set -e; \

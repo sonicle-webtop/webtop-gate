@@ -21,7 +21,7 @@ For backward compatibility, same files are also published [here](https://github.
 - `Git SCM` (>= 2.20) with `Git LFS` support
 - `Maven` (>= 3.5.x, < 3.7)
 - `Java JDK` (= 1.8.x)
-- `NodeJS` (= 8.x)
+- `NodeJS` (>= 8.x)
 - `make`, `awk`, `tar`, `bzip2`, `grep`, `sed`, `wget` commands available on system
 
 You can run this on Windows systems through [Cygwin](https://www.cygwin.com/) but you have make sure to not install `git` commands in Cygwin, so both environments will share same executables under your main Windows OS. Finally, if you have any ssh keys to access sub-modules repositories, remember to copy or link them under your Cygwin's .ssh home, making them available to Cygwin environment also.
