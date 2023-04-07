@@ -882,6 +882,35 @@ __module-tag:
 	}
 
 # Call me as sub-make
+.PHONY: __module-tagdelete
+__module-tagdelete:
+	@{ \
+	set -e; \
+	if [[ "$(__MODULE)" == "" ]]; then \
+		echo -e "'__MODULE' is empty"; \
+		exit 255; \
+	fi; \
+	if [[ "$(__TAG_NAME)" == "" ]]; then \
+		echo -e "'__TAG_NAME' is empty"; \
+		exit 255; \
+	fi; \
+	if [[ "$(__TAG_MESSAGE)" == "" ]]; then \
+		echo -e "'__TAG_MESSAGE' is empty"; \
+		exit 255; \
+	fi; \
+	modules="$(MODULES_FOLDER)"; \
+	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
+		modules="$(EXTRA_MODULES_FOLDER)"; \
+	fi; \
+	cd "$$modules/$(__MODULE)"; \
+	$(GIT) tag -d "$(__TAG_NAME)"; \
+	if [[ "$$?" -ne 0 ]]; then \
+		exit $$?; \
+	fi; \
+	cd ../..; \
+	}
+
+# Call me as sub-make
 .PHONY: __module-pull
 __module-pull:
 	@{ \
