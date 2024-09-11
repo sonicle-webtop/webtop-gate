@@ -512,6 +512,40 @@ modules-listbranch: __check-modules-dir
 	done; \
 	}
 
+.PHONY: modules-status
+.HELP: modules-status ## Show branch status for each local module (except docs and tools)
+modules-status: __check-modules-dir
+	@{ \
+	set -e; \
+	for comp in $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
+		modules="$(MODULES_FOLDER)"; \
+		if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$$comp($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$$comp($$| ) ]]; then \
+			modules="$(EXTRA_MODULES_FOLDER)"; \
+		fi; \
+		if [[ -f "$$modules/$$comp/.git/config" ]]; then \
+			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
+			$(SUB-MAKE) __MODULE="$$comp" __module-status; \
+		fi; \
+	done; \
+	}
+
+.PHONY: modules-upstreamdiff
+.HELP: modules-upstreamdiff ## Show outgoing changes (diffs current branch VS upstream) for each local module (except docs and tools)
+modules-upstreamdiff: __check-modules-dir
+	@{ \
+	set -e; \
+	for comp in $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
+		modules="$(MODULES_FOLDER)"; \
+		if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$$comp($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$$comp($$| ) ]]; then \
+			modules="$(EXTRA_MODULES_FOLDER)"; \
+		fi; \
+		if [[ -f "$$modules/$$comp/.git/config" ]]; then \
+			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
+			$(SUB-MAKE) __MODULE="$$comp" __module-upstreamdiff; \
+		fi; \
+	done; \
+	}
+
 .PHONY: build
 .HELP: build ## Build components, webapps and servers modules
 build: tools-build components-build webapps-build servers-build
@@ -821,6 +855,48 @@ __module-revertchanges:
 	fi; \
 	cd "$$modules/$(__MODULE)"; \
 	$(GIT) clean -fd . && $(GIT) checkout -- .; \
+	if [[ "$$?" -ne 0 ]]; then \
+		exit $$?; \
+	fi; \
+	cd ../..; \
+	}
+
+# Call me as sub-make
+.PHONY: __module-status
+__module-status:
+	@{ \
+	set -e; \
+	if [[ "$(__MODULE)" == "" ]]; then \
+		echo -e "'__MODULE' is empty"; \
+		exit 255; \
+	fi; \
+	modules="$(MODULES_FOLDER)"; \
+	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
+		modules="$(EXTRA_MODULES_FOLDER)"; \
+	fi; \
+	cd "$$modules/$(__MODULE)"; \
+	$(GIT) status; \
+	if [[ "$$?" -ne 0 ]]; then \
+		exit $$?; \
+	fi; \
+	cd ../..; \
+	}
+
+# Call me as sub-make
+.PHONY: __module-upstreamdiff
+__module-upstreamdiff:
+	@{ \
+	set -e; \
+	if [[ "$(__MODULE)" == "" ]]; then \
+		echo -e "'__MODULE' is empty"; \
+		exit 255; \
+	fi; \
+	modules="$(MODULES_FOLDER)"; \
+	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
+		modules="$(EXTRA_MODULES_FOLDER)"; \
+	fi; \
+	cd "$$modules/$(__MODULE)"; \
+	$(GIT) diff HEAD @{u}; \
 	if [[ "$$?" -ne 0 ]]; then \
 		exit $$?; \
 	fi; \
