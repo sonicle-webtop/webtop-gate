@@ -529,6 +529,21 @@ modules-status: __check-modules-dir
 	done; \
 	}
 
+.PHONY: modules-branch
+.HELP: modules-branch ## Creates a new untracked branch from the current one [NAME=new branch name]
+modules-branch: __check-modules-dir
+	@{ \
+	if [[ "$(NAME)" == "" ]]; then \
+		echo -e "Parameter variable 'NAME' NOT defined"; \
+		exit 255; \
+	fi; \
+	new_name="$(NAME)"; \
+	for comp in $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
+		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
+		$(SUB-MAKE) __MODULE="$$comp" __BRANCH_NAME="$$new_name" __module-branch; \
+	done; \
+	}
+
 .PHONY: modules-upstreamdiff
 .HELP: modules-upstreamdiff ## Show outgoing changes (diffs current branch VS upstream) for each local module (except docs and tools)
 modules-upstreamdiff: __check-modules-dir
@@ -922,6 +937,31 @@ __module-commit:
 	fi; \
 	cd "$$modules/$(__MODULE)"; \
 	$(GIT) add --all && $(GIT) commit -m "$(__COMMIT_MESSAGE)"; \
+	if [[ "$$?" -ne 0 ]]; then \
+		exit $$?; \
+	fi; \
+	cd ../..; \
+	}
+
+# Call me as sub-make
+.PHONY: __module-branch
+__module-branch:
+	@{ \
+	set -e; \
+	if [[ "$(__MODULE)" == "" ]]; then \
+		echo -e "'__MODULE' is empty"; \
+		exit 255; \
+	fi; \
+	if [[ "$(__BRANCH_NAME)" == "" ]]; then \
+		echo -e "'__BRANCH_NAME' is empty"; \
+		exit 255; \
+	fi; \
+	modules="$(MODULES_FOLDER)"; \
+	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
+		modules="$(EXTRA_MODULES_FOLDER)"; \
+	fi; \
+	cd "$$modules/$(__MODULE)"; \
+	$(GIT) branch "$(__BRANCH_NAME)"; \
 	if [[ "$$?" -ne 0 ]]; then \
 		exit $$?; \
 	fi; \
