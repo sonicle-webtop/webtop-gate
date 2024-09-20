@@ -530,17 +530,32 @@ modules-status: __check-modules-dir
 	}
 
 .PHONY: modules-branch
-.HELP: modules-branch ## Creates a new untracked branch from the current one [NAME=new branch name]
+.HELP: modules-branch ## Creates a new tracked branch from the current one [NAME=new branch name]
 modules-branch: __check-modules-dir
 	@{ \
 	if [[ "$(NAME)" == "" ]]; then \
 		echo -e "Parameter variable 'NAME' NOT defined"; \
 		exit 255; \
 	fi; \
-	new_name="$(NAME)"; \
+	branch_name="$(NAME)"; \
 	for comp in $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
 		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-		$(SUB-MAKE) __MODULE="$$comp" __BRANCH_NAME="$$new_name" __module-branch; \
+		$(SUB-MAKE) __MODULE="$$comp" __BRANCH_NAME="$$branch_name" __module-branch-create; \
+	done; \
+	}
+
+.PHONY: modules-branchdelete
+.HELP: modules-branchdelete ## Deletes a new tracked branch from the current one [NAME=new branch name]
+modules-branch: __check-modules-dir
+	@{ \
+	if [[ "$(NAME)" == "" ]]; then \
+		echo -e "Parameter variable 'NAME' NOT defined"; \
+		exit 255; \
+	fi; \
+	branch_name="$(NAME)"; \
+	for comp in $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
+		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
+		$(SUB-MAKE) __MODULE="$$comp" __BRANCH_NAME="$$branch_name" __module-branch-delete; \
 	done; \
 	}
 
@@ -944,8 +959,8 @@ __module-commit:
 	}
 
 # Call me as sub-make
-.PHONY: __module-branch
-__module-branch:
+.PHONY: __module-branch-create
+__module-branch-create:
 	@{ \
 	set -e; \
 	if [[ "$(__MODULE)" == "" ]]; then \
@@ -961,7 +976,36 @@ __module-branch:
 		modules="$(EXTRA_MODULES_FOLDER)"; \
 	fi; \
 	cd "$$modules/$(__MODULE)"; \
-	$(GIT) branch "$(__BRANCH_NAME)"; \
+	$(GIT) branch --track "$(__BRANCH_NAME)"; \
+	if [[ "$$?" -ne 0 ]]; then \
+		exit $$?; \
+	fi; \
+	cd ../..; \
+	}
+
+# Call me as sub-make
+.PHONY: __module-branch-delete
+__module-branch-delete:
+	@{ \
+	set -e; \
+	if [[ "$(__MODULE)" == "" ]]; then \
+		echo -e "'__MODULE' is empty"; \
+		exit 255; \
+	fi; \
+	if [[ "$(__BRANCH_NAME)" == "" ]]; then \
+		echo -e "'__BRANCH_NAME' is empty"; \
+		exit 255; \
+	fi; \
+	if [[ "$(__BRANCH_NAME)" == "release" ]] || [[ "$(__BRANCH_NAME)" == "develop" ]] || [[ "$(__BRANCH_NAME)" == "master" ]]; then \
+		echo -e "'__BRANCH_NAME' cannot be deleted"; \
+		exit 255; \
+	fi; \
+	modules="$(MODULES_FOLDER)"; \
+	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
+		modules="$(EXTRA_MODULES_FOLDER)"; \
+	fi; \
+	cd "$$modules/$(__MODULE)"; \
+	$(GIT) branch -d "$(__BRANCH_NAME)"; \
 	if [[ "$$?" -ne 0 ]]; then \
 		exit $$?; \
 	fi; \
