@@ -37,6 +37,16 @@ cWHITE := \x1b[37m
 
 # ====================
 # Modules definition
+# MVNTOOLS: components to help builds
+# COMPONENTS: base components list (added by project maintainers)
+# COMPONENTS_MORE: more base components list (treated like the above one but can be customized)
+# COMPONENTS_COM: commercial components list (treated as *commercial* in processing)
+# COMPONENTS_EXTRA: extra component to include (treated in a separate/dedicated "module folder")
+# SERVERS:
+# WEBAPPS:
+# WEBAPPS_EXTRA:
+# SERVERS:
+# DOCS:
 
 MVNTOOLS := \
 minify-maven-plugin \
@@ -72,6 +82,8 @@ webtop-tasks \
 webtop-vfs \
 webtop-drm
 #webtop-mattermost
+
+COMPONENTS_MORE :=
 
 COMPONENTS_COM :=
 
@@ -332,7 +344,7 @@ setup-senchatools-links: __check-modules-dir
 setup-modules: __setup-git __setup-folders
 	@{ \
 	set -e; \
-	for comp in $(MVNTOOLS) $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(DOCS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
+	for comp in $(MVNTOOLS) $(COMPONENTS) $(COMPONENTS_MORE) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(DOCS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
 		modules="$(MODULES_FOLDER)"; \
 		basebranch="$(DEFAULT_BASE_BRANCH)"; \
 		if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$$comp($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$$comp($$| ) ]]; then \
@@ -351,7 +363,7 @@ setup-modules: __setup-git __setup-folders
 checkout: __check-modules-dir
 	@{ \
 	set -e; \
-	comps="$(MVNTOOLS) $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS)"; \
+	comps="$(MVNTOOLS) $(COMPONENTS) $(COMPONENTS_MORE) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS)"; \
 	if [[ "$(EXTRA)" -eq 1 ]]; then \
 		comps="$(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA)"; \
 	fi; \
@@ -381,7 +393,7 @@ checkout-branch: __check-modules-dir
 		echo -e "Parameter variable 'BRANCH' NOT defined"; \
 		exit 255; \
 	fi; \
-	comps="$(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS)"; \
+	comps="$(COMPONENTS) $(COMPONENTS_MORE) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS)"; \
 	if [[ "$(EXTRA)" -eq 1 ]]; then \
 		comps="$(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA)"; \
 	fi; \
@@ -406,7 +418,7 @@ checkout-tag: __check-modules-dir
 		echo -e "Parameter variable 'TAG' NOT defined"; \
 		exit 255; \
 	fi; \
-	comps="$(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS)"; \
+	comps="$(COMPONENTS) $(COMPONENTS_MORE) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS)"; \
 	if [[ "$(EXTRA)" -eq 1 ]]; then \
 		comps="$(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA)"; \
 	fi; \
@@ -429,7 +441,7 @@ checkout-tag: __check-modules-dir
 checkout-master: __check-modules-dir
 	@{ \
 	set -e; \
-	comps="$(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS)"; \
+	comps="$(COMPONENTS) $(COMPONENTS_MORE) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS)"; \
 	if [[ "$(EXTRA)" -eq 1 ]]; then \
 		comps="$(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA)"; \
 	fi; \
@@ -452,7 +464,7 @@ checkout-master: __check-modules-dir
 checkout-develop: __check-modules-dir
 	@{ \
 	set -e; \
-	comps="$(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS)"; \
+	comps="$(COMPONENTS) $(COMPONENTS_MORE) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS)"; \
 	if [[ "$(EXTRA)" -eq 1 ]]; then \
 		comps="$(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA)"; \
 	fi; \
@@ -475,7 +487,7 @@ checkout-develop: __check-modules-dir
 checkout-release: __check-modules-dir
 	@{ \
 	set -e; \
-	comps="$(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS)"; \
+	comps="$(COMPONENTS) $(COMPONENTS_MORE) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS)"; \
 	if [[ "$(EXTRA)" -eq 1 ]]; then \
 		comps="$(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA)"; \
 	fi; \
@@ -493,22 +505,14 @@ checkout-release: __check-modules-dir
 	done; \
 	}
 
-.PHONY: modules-listbranch
-.HELP: modules-listbranch ## List branches for each local module (except docs and tools)
-modules-listbranch: __check-modules-dir
+.PHONY: modules-branch-list
+.HELP: modules-branch-list ## List branches for each local module (except docs and tools)
+modules-branch-list: __check-modules-dir
 	@{ \
 	set -e; \
-	for comp in $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
-		modules="$(MODULES_FOLDER)"; \
-		if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$$comp($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$$comp($$| ) ]]; then \
-			modules="$(EXTRA_MODULES_FOLDER)"; \
-		fi; \
-		if [[ -f "$$modules/$$comp/.git/config" ]]; then \
-			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-			cd "$$modules/$$comp"; \
-			$(GIT) branch; \
-			cd $(WORKSPACE_DIR); \
-		fi; \
+	for comp in $(COMPONENTS) $(COMPONENTS_MORE) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
+		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
+		$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __ACTION="branch-list" __module-git-exec; \
 	done; \
 	}
 
@@ -517,45 +521,57 @@ modules-listbranch: __check-modules-dir
 modules-status: __check-modules-dir
 	@{ \
 	set -e; \
-	for comp in $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
-		modules="$(MODULES_FOLDER)"; \
-		if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$$comp($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$$comp($$| ) ]]; then \
-			modules="$(EXTRA_MODULES_FOLDER)"; \
-		fi; \
-		if [[ -f "$$modules/$$comp/.git/config" ]]; then \
-			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-			$(SUB-MAKE) __MODULE="$$comp" __module-status; \
-		fi; \
+	for comp in $(COMPONENTS) $(COMPONENTS_MORE) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
+		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
+		$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __ACTION="status" __module-git-exec; \
 	done; \
 	}
 
-.PHONY: modules-branch
-.HELP: modules-branch ## Creates a new tracked branch from the current one [NAME=new branch name]
-modules-branch: __check-modules-dir
+.PHONY: modules-branch-create
+.HELP: modules-branch-create ## Creates a new tracked branch from the current one [NAME=new branch name]
+modules-branchcreate: __check-modules-dir
 	@{ \
+	set -e; \
 	if [[ "$(NAME)" == "" ]]; then \
 		echo -e "Parameter variable 'NAME' NOT defined"; \
 		exit 255; \
 	fi; \
 	branch_name="$(NAME)"; \
-	for comp in $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
+	for comp in $(COMPONENTS) $(COMPONENTS_MORE) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
 		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-		$(SUB-MAKE) __MODULE="$$comp" __BRANCH_NAME="$$branch_name" __module-branch-create; \
+		$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __ACTION="branch-create" __BRANCH_NAME="$$branch_name" __module-git-exec; \
 	done; \
 	}
 
-.PHONY: modules-branchdelete
-.HELP: modules-branchdelete ## Deletes a new tracked branch from the current one [NAME=new branch name]
-modules-branch: __check-modules-dir
+.PHONY: modules-branch-delete
+.HELP: modules-branch-delete ## Deletes a branch from the current one [NAME=branch name to delete]
+modules-branchdelete: __check-modules-dir
 	@{ \
+	set -e; \
 	if [[ "$(NAME)" == "" ]]; then \
 		echo -e "Parameter variable 'NAME' NOT defined"; \
 		exit 255; \
 	fi; \
 	branch_name="$(NAME)"; \
-	for comp in $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
+	for comp in $(COMPONENTS) $(COMPONENTS_MORE) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
 		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-		$(SUB-MAKE) __MODULE="$$comp" __BRANCH_NAME="$$branch_name" __module-branch-delete; \
+		$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __ACTION="branch-delete" __BRANCH_NAME="$$branch_name" __module-git-exec; \
+	done; \
+	}
+
+.PHONY: modules-branch-push
+.HELP: modules-branch-push ## Pushes target branch of each local module to their 'origin' remote [NAME=branch to push]
+modules-branch-push: __check-modules-dir
+	@{ \
+	set -e; \
+	if [[ "$(NAME)" == "" ]]; then \
+		echo -e "Parameter variable 'NAME' NOT defined"; \
+		exit 255; \
+	fi; \
+	branch_name="$(NAME)"; \
+	for comp in $(COMPONENTS) $(COMPONENTS_MORE) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
+		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
+		$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __ACTION="push" __BRANCH_NAME="$$branch_name" __EVAL_FLAGS=false __module-git-exec; \
 	done; \
 	}
 
@@ -564,15 +580,9 @@ modules-branch: __check-modules-dir
 modules-upstreamdiff: __check-modules-dir
 	@{ \
 	set -e; \
-	for comp in $(COMPONENTS) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
-		modules="$(MODULES_FOLDER)"; \
-		if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$$comp($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$$comp($$| ) ]]; then \
-			modules="$(EXTRA_MODULES_FOLDER)"; \
-		fi; \
-		if [[ -f "$$modules/$$comp/.git/config" ]]; then \
-			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-			$(SUB-MAKE) __MODULE="$$comp" __module-upstreamdiff; \
-		fi; \
+	for comp in $(COMPONENTS) $(COMPONENTS_MORE) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
+		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
+		$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __ACTION="upstreamdiff" __module-git-exec; \
 	done; \
 	}
 
@@ -599,7 +609,7 @@ components-build: __check-modules-dir
 	@{ \
 	set -e; \
 	$(call msgts,"[$@] Started at"); \
-	xcomps="$(COMPONENTS) $(COMPONENTS_COM)"; \
+	xcomps="$(COMPONENTS) $(COMPONENTS_MORE) $(COMPONENTS_COM)"; \
 	if [[ "$(EXTRA)" -eq 1 ]]; then \
 		xcomps="$(COMPONENTS_EXTRA)"; \
 	fi; \
@@ -633,13 +643,14 @@ components-build: __check-modules-dir
 components-revertchanges: __check-modules-dir
 	@{ \
 	set -e; \
-	comps="$(COMPONENTS) $(COMPONENTS_COM)"; \
+	comps="$(COMPONENTS) $(COMPONENTS_MORE) $(COMPONENTS_COM)"; \
 	if [[ "$(EXTRA)" -eq 1 ]]; then \
 		comps="$(COMPONENTS_EXTRA)"; \
 	fi; \
 	for comp in $$comps; do \
 		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-		$(SUB-MAKE) __MODULE="$$comp" __module-revertchanges; \
+		$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __ACTION="revertchanges" __module-git-exec; \
+#		$(SUB-MAKE) __MODULE="$$comp" __module-revertchanges-deprecated; \
 	done; \
 	}
 
@@ -673,7 +684,8 @@ webapps-revertchanges: __check-modules-dir
 	fi; \
 	for comp in $$comps; do \
 		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-		$(SUB-MAKE) __MODULE="$$comp" __module-revertchanges; \
+		$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __ACTION="revertchanges" __module-git-exec; \
+#		$(SUB-MAKE) __MODULE="$$comp" __module-revertchanges-deprecated; \
 	done; \
 	}
 
@@ -871,12 +883,20 @@ __module-merge:
 	}
 
 # Call me as sub-make
-.PHONY: __module-revertchanges
-__module-revertchanges:
+.PHONY: __module-git-exec
+__module-git-exec:
 	@{ \
 	set -e; \
 	if [[ "$(__MODULE)" == "" ]]; then \
 		echo -e "'__MODULE' is empty"; \
+		exit 255; \
+	fi; \
+	if [[ "$(__MODULE_FLAGS)" == "" ]]; then \
+		echo -e "'__MODULE_FLAGS' is empty"; \
+		exit 255; \
+	fi; \
+	if [[ "$(__ACTION)" == "" ]]; then \
+		echo -e "'__ACTION' is empty"; \
 		exit 255; \
 	fi; \
 	modules="$(MODULES_FOLDER)"; \
@@ -884,188 +904,175 @@ __module-revertchanges:
 		modules="$(EXTRA_MODULES_FOLDER)"; \
 	fi; \
 	cd "$$modules/$(__MODULE)"; \
-	$(GIT) clean -fd . && $(GIT) checkout -- .; \
-	if [[ "$$?" -ne 0 ]]; then \
-		exit $$?; \
-	fi; \
-	cd ../..; \
-	}
-
-# Call me as sub-make
-.PHONY: __module-status
-__module-status:
-	@{ \
-	set -e; \
-	if [[ "$(__MODULE)" == "" ]]; then \
-		echo -e "'__MODULE' is empty"; \
-		exit 255; \
-	fi; \
-	modules="$(MODULES_FOLDER)"; \
-	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
-		modules="$(EXTRA_MODULES_FOLDER)"; \
-	fi; \
-	cd "$$modules/$(__MODULE)"; \
-	$(GIT) status; \
-	if [[ "$$?" -ne 0 ]]; then \
-		exit $$?; \
-	fi; \
-	cd ../..; \
-	}
-
-# Call me as sub-make
-.PHONY: __module-upstreamdiff
-__module-upstreamdiff:
-	@{ \
-	set -e; \
-	if [[ "$(__MODULE)" == "" ]]; then \
-		echo -e "'__MODULE' is empty"; \
-		exit 255; \
-	fi; \
-	modules="$(MODULES_FOLDER)"; \
-	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
-		modules="$(EXTRA_MODULES_FOLDER)"; \
-	fi; \
-	cd "$$modules/$(__MODULE)"; \
-	$(GIT) diff HEAD @{u}; \
-	if [[ "$$?" -ne 0 ]]; then \
-		exit $$?; \
-	fi; \
-	cd ../..; \
-	}
-
-# Call me as sub-make
-.PHONY: __module-commit
-__module-commit:
-	@{ \
-	set -e; \
-	if [[ "$(__MODULE)" == "" ]]; then \
-		echo -e "'__MODULE' is empty"; \
-		exit 255; \
-	fi; \
-	if [[ "$(__COMMIT_MESSAGE)" == "" ]]; then \
-		echo -e "'__COMMIT_MESSAGE' is empty"; \
-		exit 255; \
-	fi; \
-	modules="$(MODULES_FOLDER)"; \
-	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
-		modules="$(EXTRA_MODULES_FOLDER)"; \
-	fi; \
-	cd "$$modules/$(__MODULE)"; \
-	$(GIT) add --all && $(GIT) commit -m "$(__COMMIT_MESSAGE)"; \
-	if [[ "$$?" -ne 0 ]]; then \
-		exit $$?; \
-	fi; \
-	cd ../..; \
-	}
-
-# Call me as sub-make
-.PHONY: __module-branch-create
-__module-branch-create:
-	@{ \
-	set -e; \
-	if [[ "$(__MODULE)" == "" ]]; then \
-		echo -e "'__MODULE' is empty"; \
-		exit 255; \
-	fi; \
-	if [[ "$(__BRANCH_NAME)" == "" ]]; then \
-		echo -e "'__BRANCH_NAME' is empty"; \
-		exit 255; \
-	fi; \
-	modules="$(MODULES_FOLDER)"; \
-	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
-		modules="$(EXTRA_MODULES_FOLDER)"; \
-	fi; \
-	cd "$$modules/$(__MODULE)"; \
-	$(GIT) branch --track "$(__BRANCH_NAME)"; \
-	if [[ "$$?" -ne 0 ]]; then \
-		exit $$?; \
-	fi; \
-	cd ../..; \
-	}
-
-# Call me as sub-make
-.PHONY: __module-branch-delete
-__module-branch-delete:
-	@{ \
-	set -e; \
-	if [[ "$(__MODULE)" == "" ]]; then \
-		echo -e "'__MODULE' is empty"; \
-		exit 255; \
-	fi; \
-	if [[ "$(__BRANCH_NAME)" == "" ]]; then \
-		echo -e "'__BRANCH_NAME' is empty"; \
-		exit 255; \
-	fi; \
-	if [[ "$(__BRANCH_NAME)" == "release" ]] || [[ "$(__BRANCH_NAME)" == "develop" ]] || [[ "$(__BRANCH_NAME)" == "master" ]]; then \
-		echo -e "'__BRANCH_NAME' cannot be deleted"; \
-		exit 255; \
-	fi; \
-	modules="$(MODULES_FOLDER)"; \
-	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
-		modules="$(EXTRA_MODULES_FOLDER)"; \
-	fi; \
-	cd "$$modules/$(__MODULE)"; \
-	$(GIT) branch -d "$(__BRANCH_NAME)"; \
-	if [[ "$$?" -ne 0 ]]; then \
-		exit $$?; \
-	fi; \
-	cd ../..; \
-	}
-
-# Call me as sub-make
-.PHONY: __module-tag
-__module-tag:
-	@{ \
-	set -e; \
-	if [[ "$(__MODULE)" == "" ]]; then \
-		echo -e "'__MODULE' is empty"; \
-		exit 255; \
-	fi; \
-	if [[ "$(__TAG_NAME)" == "" ]]; then \
-		echo -e "'__TAG_NAME' is empty"; \
-		exit 255; \
-	fi; \
-	if [[ "$(__TAG_MESSAGE)" == "" ]]; then \
-		echo -e "'__TAG_MESSAGE' is empty"; \
-		exit 255; \
-	fi; \
-	modules="$(MODULES_FOLDER)"; \
-	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
-		modules="$(EXTRA_MODULES_FOLDER)"; \
-	fi; \
-	cd "$$modules/$(__MODULE)"; \
-	$(GIT) tag -a "$(__TAG_NAME)" -m "$(__TAG_MESSAGE)"; \
-	if [[ "$$?" -ne 0 ]]; then \
-		exit $$?; \
-	fi; \
-	cd ../..; \
-	}
-
-# Call me as sub-make
-.PHONY: __module-tagdelete
-__module-tagdelete:
-	@{ \
-	set -e; \
-	if [[ "$(__MODULE)" == "" ]]; then \
-		echo -e "'__MODULE' is empty"; \
-		exit 255; \
-	fi; \
-	if [[ "$(__TAG_NAME)" == "" ]]; then \
-		echo -e "'__TAG_NAME' is empty"; \
-		exit 255; \
-	fi; \
-	if [[ "$(__TAG_MESSAGE)" == "" ]]; then \
-		echo -e "'__TAG_MESSAGE' is empty"; \
-		exit 255; \
-	fi; \
-	modules="$(MODULES_FOLDER)"; \
-	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
-		modules="$(EXTRA_MODULES_FOLDER)"; \
-	fi; \
-	cd "$$modules/$(__MODULE)"; \
-	$(GIT) tag -d "$(__TAG_NAME)"; \
-	if [[ "$$?" -ne 0 ]]; then \
-		exit $$?; \
+	if [[ "$(__ACTION)" == "branch-list" ]]; then \
+		$(GIT) branch; \
+		if [[ "$$?" -ne 0 ]]; then \
+			exit $$?; \
+		fi; \
+	elif [[ "$(__ACTION)" == "branch-create" ]]; then \
+		if [[ "$(__BRANCH_NAME)" == "" ]]; then \
+			echo -e "'__BRANCH_NAME' is empty"; \
+			exit 255; \
+		fi; \
+		$(GIT) branch --track "$(__BRANCH_NAME)"; \
+		if [[ "$$?" -ne 0 ]]; then \
+			exit $$?; \
+		fi; \
+	elif [[ "$(__ACTION)" == "branch-delete" ]]; then \
+		if [[ "$(__BRANCH_NAME)" == "" ]]; then \
+			echo -e "'__BRANCH_NAME' is empty"; \
+			exit 255; \
+		fi; \
+		if [[ "$(__BRANCH_NAME)" == "release" ]] || [[ "$(__BRANCH_NAME)" == "develop" ]] || [[ "$(__BRANCH_NAME)" == "master" ]]; then \
+			echo -e "Branch cannot be deleted: reserved name"; \
+			exit 255; \
+		fi; \
+		$(GIT) branch -d "$(__BRANCH_NAME)"; \
+		if [[ "$$?" -ne 0 ]]; then \
+			exit $$?; \
+		fi; \
+	elif [[ "$(__ACTION)" == "branch-enforce" ]]; then \
+		if [[ "$(__BRANCH_NAME)" == "" ]]; then \
+			echo -e "'__BRANCH_NAME' is empty"; \
+			exit 255; \
+		fi; \
+		branch=`$(GIT) rev-parse --abbrev-ref HEAD`; \
+		if [ "$$branch" != "$(__BRANCH_NAME)" ]; then \
+			echo -e "Current branch MUST be '$(__BRANCH_NAME)'"; \
+			exit 1; \
+		fi; \
+	elif [[ "$(__ACTION)" == "tag-create" ]]; then \
+		if [[ "$(__TAG_NAME)" == "" ]]; then \
+			echo -e "'__TAG_NAME' is empty"; \
+			exit 255; \
+		fi; \
+		if [[ "$(__TAG_MESSAGE)" == "" ]]; then \
+			echo -e "'__TAG_MESSAGE' is empty"; \
+			exit 255; \
+		fi; \
+		$(GIT) tag -a "$(__TAG_NAME)" -m "$(__TAG_MESSAGE)"; \
+		if [[ "$$?" -ne 0 ]]; then \
+			exit $$?; \
+		fi; \
+	elif [[ "$(__ACTION)" == "tag-delete" ]]; then \
+		if [[ "$(__TAG_NAME)" == "" ]]; then \
+			echo -e "'__TAG_NAME' is empty"; \
+			exit 255; \
+		fi; \
+		$(GIT) tag -d "$(__TAG_NAME)"; \
+		if [[ "$$?" -ne 0 ]]; then \
+			exit $$?; \
+		fi; \
+	elif [[ "$(__ACTION)" == "push" ]]; then \
+		if [[ "$(__BRANCH_NAME)" == "" ]]; then \
+			echo -e "'__BRANCH_NAME' is empty"; \
+			exit 255; \
+		fi; \
+		remote="origin"; \
+		if [[ "$(__REMOTE_NAME)" != "" ]]; then \
+			remote="$(__REMOTE_NAME)"; \
+		fi; \
+		branch="$(__BRANCH_NAME)"; \
+		if [[ "$(__EVAL_FLAGS)" != "false" ]]; then \
+			if [[ "$(__BRANCH_NAME)" == "release" ]] && [[ "$($(__BRANCH_NAME))" == *"git-release"* ]]; then \
+				branch="release"; \
+			elif [[ "$(__TARGET_BRANCH)" == "develop" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
+				branch="develop"; \
+			else \
+				branch="$(__DEFAULT_BRANCH)"; \
+			fi; \
+		fi; \
+		if [[ "$$branch" != "" ]]; then \
+			if [[ "$(__PUSH_TAGS)" == "true" ]]; then \
+				$(GIT) checkout $$branch && $(GIT) push $$remote $$branch && $(GIT) push $$remote --tags -f; \
+			else \
+				$(GIT) checkout $$branch && $(GIT) push $$remote $$branch; \
+			fi; \
+			if [[ "$$?" -ne 0 ]]; then \
+				exit $$?; \
+			fi; \
+		fi; \
+	elif [[ "$(__ACTION)" == "pull" ]]; then \
+		branch="$(__BRANCH_NAME)"; \
+		if [[ "$(__EVAL_FLAGS)" != "false" ]]; then \
+			if [[ "$(__BRANCH_NAME)" == "release" ]] && [[ "$($(__BRANCH_NAME))" == *"git-release"* ]]; then \
+				branch="release"; \
+			elif [[ "$(__TARGET_BRANCH)" == "develop" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
+				branch="develop"; \
+			else \
+				branch="$(__DEFAULT_BRANCH)"; \
+			fi; \
+		fi; \
+		tag="$(__TAG_NAME)"; \
+		if [[ "$$branch" != "" ]]; then \
+			$(GIT) checkout $$branch && $(GIT) pull; \
+			if [[ "$$?" -ne 0 ]]; then \
+				exit $$?; \
+			fi; \
+			if [[ "$$tag" != "" ]]; then \
+				set +e; \
+				$(GIT) checkout tags/$$tag; \
+				set -e; \
+			fi; \
+		fi; \
+	elif [[ "$(__ACTION)" == "commit" ]]; then \
+		if [[ "$(__COMMIT_MESSAGE)" == "" ]]; then \
+			echo -e "'__COMMIT_MESSAGE' is empty"; \
+			exit 255; \
+		fi; \
+		$(GIT) add --all && $(GIT) commit -m "$(__COMMIT_MESSAGE)"; \
+		if [[ "$$?" -ne 0 ]]; then \
+			exit $$?; \
+		fi; \
+	elif [[ "$(__ACTION)" == "remote-add" ]]; then \
+		if [[ -z "$(__REMOTE_NAME)" ]]; then \
+			echo -e "'__REMOTE_NAME' is empty"; \
+			exit 255; \
+		fi; \
+		if [[ -z "$(__DEFAULT_REMOTE_BASEURL)" ]]; then \
+			echo -e "'__DEFAULT_REMOTE_BASEURL' is empty"; \
+			exit 255; \
+		fi; \
+		baseurl="$(__DEFAULT_REMOTE_BASEURL)"; \
+		if [[ ! -z "$($(__MODULE_REMOTE_BASEURL))" ]]; then \
+			baseurl=$($(__MODULE_REMOTE_BASEURL)); \
+		fi; \
+		repo="$(__MODULE)"; \
+		if [[ ! -z "$($(__MODULE_REMOTE_REPO))" ]]; then \
+			repo=$($(__MODULE_REMOTE_REPO)); \
+		fi; \
+		set +e; \
+		$(GIT) remote add $(__REMOTE_NAME) $$baseurl/$$repo.git; \
+		if [[ "$$?" -ne 0 ]]; then \
+			exit $$?; \
+		fi; \
+		set -e; \
+	elif [[ "$(__ACTION)" == "remote-remove" ]]; then \
+		if [[ "$(__REMOTE_NAME)" == "" ]]; then \
+			echo -e "'__REMOTE_NAME' is empty"; \
+			exit 255; \
+		fi; \
+		set +e; \
+		$(GIT) remote remove $(__REMOTE_NAME); \
+		if [[ "$$?" -ne 0 ]]; then \
+			exit $$?; \
+		fi; \
+		set -e; \
+	elif [[ "$(__ACTION)" == "status" ]]; then \
+		$(GIT) status; \
+		if [[ "$$?" -ne 0 ]]; then \
+			exit $$?; \
+		fi; \
+	elif [[ "$(__ACTION)" == "revertchanges" ]]; then \
+		$(GIT) clean -fd . && $(GIT) checkout -- .; \
+		if [[ "$$?" -ne 0 ]]; then \
+			exit $$?; \
+		fi; \
+	elif [[ "$(__ACTION)" == "upstreamdiff" ]]; then \
+		$(GIT) diff HEAD @{u}; \
+		if [[ "$$?" -ne 0 ]]; then \
+			exit $$?; \
+		fi; \
 	fi; \
 	cd ../..; \
 	}
@@ -1190,98 +1197,6 @@ __module-clone:
 	if [[ "$$?" -ne 0 ]]; then \
 		exit $$?; \
 	fi; \
-	}
-
-# Call me as sub-make
-.PHONY: __module-checkonbranch
-__module-checkonbranch:
-	@{ \
-	set -e; \
-	if [[ "$(__MODULE)" == "" ]]; then \
-		echo -e "'__MODULE' is empty"; \
-		exit 255; \
-	fi; \
-	if [[ "$(__TARGET_BRANCH)" == "" ]]; then \
-		echo -e "'__TARGET_BRANCH' is empty"; \
-		exit 255; \
-	fi; \
-	modules="$(MODULES_FOLDER)"; \
-	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
-		modules="$(EXTRA_MODULES_FOLDER)"; \
-	fi; \
-	cd "$$modules/$(__MODULE)"; \
-	branch=`$(GIT) rev-parse --abbrev-ref HEAD`; \
-	if [ "$$branch" != "$(__TARGET_BRANCH)" ]; then \
-		echo -e "Current branch MUST be '$(__TARGET_BRANCH)'"; \
-		exit 1; \
-	fi; \
-	cd ../..; \
-	}
-
-# Call me as sub-make
-.PHONY: __module-addremote
-__module-addremote:
-	@{ \
-	set -e; \
-	if [[ -z "$(__MODULE)" ]]; then \
-		echo -e "'__MODULE' is empty"; \
-		exit 255; \
-	fi; \
-	if [[ -z "$(__REMOTE_NAME)" ]]; then \
-		echo -e "'__REMOTE_NAME' is empty"; \
-		exit 255; \
-	fi; \
-	if [[ -z "$(__DEFAULT_REMOTE_BASEURL)" ]]; then \
-		echo -e "'__DEFAULT_REMOTE_BASEURL' is empty"; \
-		exit 255; \
-	fi; \
-	modules="$(MODULES_FOLDER)"; \
-	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
-		modules="$(EXTRA_MODULES_FOLDER)"; \
-	fi; \
-	baseurl="$(__DEFAULT_REMOTE_BASEURL)"; \
-	if [[ ! -z "$($(__MODULE_REMOTE_BASEURL))" ]]; then \
-		baseurl=$($(__MODULE_REMOTE_BASEURL)); \
-	fi; \
-	repo="$(__MODULE)"; \
-	if [[ ! -z "$($(__MODULE_REMOTE_REPO))" ]]; then \
-		repo=$($(__MODULE_REMOTE_REPO)); \
-	fi; \
-	cd "$$modules/$(__MODULE)"; \
-	set +e; \
-	$(GIT) remote add $(__REMOTE_NAME) $$baseurl/$$repo.git; \
-	if [[ "$$?" -ne 0 ]]; then \
-		exit $$?; \
-	fi; \
-	set -e; \
-	cd ../..; \
-	}
-
-# Call me as sub-make
-.PHONY: __module-removeremote
-__module-removeremote:
-	@{ \
-	set -e; \
-	if [[ -z "$(__MODULE)" ]]; then \
-		echo -e "'__MODULE' is empty"; \
-		exit 255; \
-	fi; \
-	if [[ -z "$(__REMOTE_NAME)" ]]; then \
-		echo -e "'__REMOTE_NAME' is empty"; \
-		exit 255; \
-	fi; \
-	modules="$(MODULES_FOLDER)"; \
-	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
-		modules="$(EXTRA_MODULES_FOLDER)"; \
-	fi; \
-	cd "$$modules/$(__MODULE)"; \
-	set +e; \
-	$(GIT) remote remove $(__REMOTE_NAME); \
-	if [[ "$$?" -ne 0 ]]; then \
-		exit $$?; \
-	fi; \
-	set -e; \
-	cd ../..; \
 	}
 
 # Call me as sub-make
@@ -1482,3 +1397,199 @@ __setup-git:
 define msgts
 	echo -en "\x1b[36m$1\x1b[0m $(shell /bin/date "+%Y-%m-%d %H:%M:%S")";echo -e "\x1b[0m"
 endef
+
+# Call me as sub-make use __module-git-exec@remote-add)
+.PHONY: __module-addremote-deprecated
+__module-addremote-deprecated:
+	@{ \
+	set -e; \
+	if [[ -z "$(__MODULE)" ]]; then \
+		echo -e "'__MODULE' is empty"; \
+		exit 255; \
+	fi; \
+	if [[ -z "$(__REMOTE_NAME)" ]]; then \
+		echo -e "'__REMOTE_NAME' is empty"; \
+		exit 255; \
+	fi; \
+	if [[ -z "$(__DEFAULT_REMOTE_BASEURL)" ]]; then \
+		echo -e "'__DEFAULT_REMOTE_BASEURL' is empty"; \
+		exit 255; \
+	fi; \
+	modules="$(MODULES_FOLDER)"; \
+	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
+		modules="$(EXTRA_MODULES_FOLDER)"; \
+	fi; \
+	baseurl="$(__DEFAULT_REMOTE_BASEURL)"; \
+	if [[ ! -z "$($(__MODULE_REMOTE_BASEURL))" ]]; then \
+		baseurl=$($(__MODULE_REMOTE_BASEURL)); \
+	fi; \
+	repo="$(__MODULE)"; \
+	if [[ ! -z "$($(__MODULE_REMOTE_REPO))" ]]; then \
+		repo=$($(__MODULE_REMOTE_REPO)); \
+	fi; \
+	cd "$$modules/$(__MODULE)"; \
+	set +e; \
+	$(GIT) remote add $(__REMOTE_NAME) $$baseurl/$$repo.git; \
+	if [[ "$$?" -ne 0 ]]; then \
+		exit $$?; \
+	fi; \
+	set -e; \
+	cd ../..; \
+	}
+
+# Call me as sub-make (DEPRECATED use __module-git-exec@remote-remove)
+.PHONY: __module-removeremote-deprecated
+__module-removeremote-deprecated:
+	@{ \
+	set -e; \
+	if [[ -z "$(__MODULE)" ]]; then \
+		echo -e "'__MODULE' is empty"; \
+		exit 255; \
+	fi; \
+	if [[ -z "$(__REMOTE_NAME)" ]]; then \
+		echo -e "'__REMOTE_NAME' is empty"; \
+		exit 255; \
+	fi; \
+	modules="$(MODULES_FOLDER)"; \
+	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
+		modules="$(EXTRA_MODULES_FOLDER)"; \
+	fi; \
+	cd "$$modules/$(__MODULE)"; \
+	set +e; \
+	$(GIT) remote remove $(__REMOTE_NAME); \
+	if [[ "$$?" -ne 0 ]]; then \
+		exit $$?; \
+	fi; \
+	set -e; \
+	cd ../..; \
+	}
+
+# Call me as sub-make (DEPRECATED use __module-git-exec@revertchanges)
+.PHONY: __module-revertchanges-deprecated
+__module-revertchanges-deprecated:
+	@{ \
+	set -e; \
+	if [[ "$(__MODULE)" == "" ]]; then \
+		echo -e "'__MODULE' is empty"; \
+		exit 255; \
+	fi; \
+	modules="$(MODULES_FOLDER)"; \
+	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
+		modules="$(EXTRA_MODULES_FOLDER)"; \
+	fi; \
+	cd "$$modules/$(__MODULE)"; \
+	$(GIT) clean -fd . && $(GIT) checkout -- .; \
+	if [[ "$$?" -ne 0 ]]; then \
+		exit $$?; \
+	fi; \
+	cd ../..; \
+	}
+
+# Call me as sub-make (DEPRECATED use __module-git-exec@commit)
+.PHONY: __module-commit-deprecated
+__module-commit-deprecated:
+	@{ \
+	set -e; \
+	if [[ "$(__MODULE)" == "" ]]; then \
+		echo -e "'__MODULE' is empty"; \
+		exit 255; \
+	fi; \
+	if [[ "$(__COMMIT_MESSAGE)" == "" ]]; then \
+		echo -e "'__COMMIT_MESSAGE' is empty"; \
+		exit 255; \
+	fi; \
+	modules="$(MODULES_FOLDER)"; \
+	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
+		modules="$(EXTRA_MODULES_FOLDER)"; \
+	fi; \
+	cd "$$modules/$(__MODULE)"; \
+	$(GIT) add --all && $(GIT) commit -m "$(__COMMIT_MESSAGE)"; \
+	if [[ "$$?" -ne 0 ]]; then \
+		exit $$?; \
+	fi; \
+	cd ../..; \
+	}
+
+# Call me as sub-make (DEPRECATED use __module-git-exec@branch-enforce)
+.PHONY: __module-checkonbranch-deprecated
+__module-checkonbranch-deprecated:
+	@{ \
+	set -e; \
+	if [[ "$(__MODULE)" == "" ]]; then \
+		echo -e "'__MODULE' is empty"; \
+		exit 255; \
+	fi; \
+	if [[ "$(__TARGET_BRANCH)" == "" ]]; then \
+		echo -e "'__TARGET_BRANCH' is empty"; \
+		exit 255; \
+	fi; \
+	modules="$(MODULES_FOLDER)"; \
+	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
+		modules="$(EXTRA_MODULES_FOLDER)"; \
+	fi; \
+	cd "$$modules/$(__MODULE)"; \
+	branch=`$(GIT) rev-parse --abbrev-ref HEAD`; \
+	if [ "$$branch" != "$(__TARGET_BRANCH)" ]; then \
+		echo -e "Current branch MUST be '$(__TARGET_BRANCH)'"; \
+		exit 1; \
+	fi; \
+	cd ../..; \
+	}
+
+# Call me as sub-make (DEPRECATED use __module-git-exec@tag-create)
+.PHONY: __module-tag-deprecated
+__module-tag-deprecated:
+	@{ \
+	set -e; \
+	if [[ "$(__MODULE)" == "" ]]; then \
+		echo -e "'__MODULE' is empty"; \
+		exit 255; \
+	fi; \
+	if [[ "$(__TAG_NAME)" == "" ]]; then \
+		echo -e "'__TAG_NAME' is empty"; \
+		exit 255; \
+	fi; \
+	if [[ "$(__TAG_MESSAGE)" == "" ]]; then \
+		echo -e "'__TAG_MESSAGE' is empty"; \
+		exit 255; \
+	fi; \
+	modules="$(MODULES_FOLDER)"; \
+	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
+		modules="$(EXTRA_MODULES_FOLDER)"; \
+	fi; \
+	cd "$$modules/$(__MODULE)"; \
+	$(GIT) tag -a "$(__TAG_NAME)" -m "$(__TAG_MESSAGE)"; \
+	if [[ "$$?" -ne 0 ]]; then \
+		exit $$?; \
+	fi; \
+	cd ../..; \
+	}
+
+# Call me as sub-make (DEPRECATED use __module-git-exec@tag-delete)
+.PHONY: __module-tagdelete-deprecated
+__module-tagdelete-deprecated:
+	@{ \
+	set -e; \
+	if [[ "$(__MODULE)" == "" ]]; then \
+		echo -e "'__MODULE' is empty"; \
+		exit 255; \
+	fi; \
+	if [[ "$(__TAG_NAME)" == "" ]]; then \
+		echo -e "'__TAG_NAME' is empty"; \
+		exit 255; \
+	fi; \
+	if [[ "$(__TAG_MESSAGE)" == "" ]]; then \
+		echo -e "'__TAG_MESSAGE' is empty"; \
+		exit 255; \
+	fi; \
+	modules="$(MODULES_FOLDER)"; \
+	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
+		modules="$(EXTRA_MODULES_FOLDER)"; \
+	fi; \
+	cd "$$modules/$(__MODULE)"; \
+	$(GIT) tag -d "$(__TAG_NAME)"; \
+	if [[ "$$?" -ne 0 ]]; then \
+		exit $$?; \
+	fi; \
+	cd ../..; \
+	}
