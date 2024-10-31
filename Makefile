@@ -1069,7 +1069,7 @@ __module-git-exec:
 			exit $$?; \
 		fi; \
 	elif [[ "$(__ACTION)" == "upstreamdiff" ]]; then \
-		$(GIT) diff HEAD @{u}; \
+		$(GIT) fetch origin master:refs/temp && ($(GIT) diff HEAD refs/temp; $(GIT) update-ref -d refs/temp); \
 		if [[ "$$?" -ne 0 ]]; then \
 			exit $$?; \
 		fi; \
