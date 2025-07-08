@@ -736,6 +736,17 @@ clean-localartifacts:
 	}
 
 # Call me as sub-make
+.PHONY: __folder-deploy
+__folder-deploy:
+	@{ \
+	echo -e "Copying to $(__TARGET_FOLDER) as $(__TARGET_FILE)"; \
+	cp "$(__WAR_FILE)" "$(__TARGET_FOLDER)\$(__TARGET_FILE)"; \
+	if [[ "$$?" -ne 0 ]]; then \
+		exit $$?; \
+	fi; \
+	}
+
+# Call me as sub-make
 .PHONY: __tomcat-deploy
 __tomcat-deploy:
 	@{ \
