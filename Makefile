@@ -974,6 +974,19 @@ __module-git-exec:
 		if [[ "$$?" -ne 0 ]]; then \
 			exit $$?; \
 		fi; \
+	elif [[ "$(__ACTION)" == "push-delete" ]]; then \
+		if [[ "$(__REFSPEC_NAME)" == "" ]]; then \
+			echo -e "'__REFSPEC_NAME' is empty"; \
+			exit 255; \
+		fi; \
+		remote="origin"; \
+		if [[ "$(__REMOTE_NAME)" != "" ]]; then \
+			remote="$(__REMOTE_NAME)"; \
+		fi; \
+		$(GIT) push $$remote --delete "$(__REFSPEC_NAME)"; \
+		if [[ "$$?" -ne 0 ]]; then \
+			exit $$?; \
+		fi; \
 	elif [[ "$(__ACTION)" == "push" ]]; then \
 		if [[ "$(__BRANCH_NAME)" == "" ]]; then \
 			echo -e "'__BRANCH_NAME' is empty"; \
@@ -994,7 +1007,15 @@ __module-git-exec:
 			fi; \
 		fi; \
 		if [[ "$$branch" != "" ]]; then \
-			if [[ "$(__PUSH_TAGS)" == "true" ]]; then \
+			tagsmode=""; \
+			if [[ "$(__TAGS_MODE)" == "" ]] && [[ "$(__PUSH_TAGS)" == "true" ]]; then \
+				tagsmode="PUSH"; \
+			else \
+				tagsmode="$(__TAGS_MODE)"; \
+			fi; \
+			if [[ "$$tagsmode" == "MIRROR" ]]; then \
+				$(GIT) checkout $$branch && $(GIT) push $$remote $$branch && $(GIT) push $$remote --prune "refs/tags/*:refs/tags/*"; \
+			elif [[ "$$tagsmode" == "PUSH" ]]; then \
 				$(GIT) checkout $$branch && $(GIT) push $$remote $$branch && $(GIT) push $$remote --tags -f; \
 			else \
 				$(GIT) checkout $$branch && $(GIT) push $$remote $$branch; \
@@ -1155,7 +1176,18 @@ __module-push:
 	fi; \
 	cd "$$modules/$(__MODULE)"; \
 	if [[ "$$branch" != "" ]]; then \
-		if [[ "$(__PUSH_TAGS)" == "true" ]]; then \
+		tagsmode=""; \
+		if [[ "$(__TAGS_MODE)" == "" ]] && [[ "$(__PUSH_TAGS)" == "true" ]]; then \
+			tagsmode="PUSH"; \
+		else \
+			tagsmode="$(__TAGS_MODE)"; \
+		fi; \
+		if [[ "$$tagsmode" == "MIRROR" ]]; then \
+			$(GIT) checkout $$branch && $(GIT) push $$remote $$branch && $(GIT) push $$remote --prune "refs/tags/*:refs/tags/*"; \
+			if [[ "$$?" -ne 0 ]]; then \
+				exit $$?; \
+			fi; \
+		elif [[ "$$tagsmode" == "PUSH" ]]; then \
 			$(GIT) checkout $$branch && $(GIT) push $$remote $$branch && $(GIT) push $$remote --tags -f; \
 			if [[ "$$?" -ne 0 ]]; then \
 				exit $$?; \
@@ -1170,34 +1202,6 @@ __module-push:
 	tag="$(__TARGET_TAG)"; \
 	if [[ "$$tag" != "" ]]; then \
 		$(GIT) push $$remote tag $$tag; \
-		if [[ "$$?" -ne 0 ]]; then \
-			exit $$?; \
-		fi; \
-	fi; \
-	cd ../..; \
-	}
-
-# Call me as sub-make
-.PHONY: __module-pushdelete
-__module-pushdelete:
-	@{ \
-	set -e; \
-	if [[ "$(__MODULE)" == "" ]]; then \
-		echo -e "'__MODULE' is empty"; \
-		exit 255; \
-	fi; \
-	modules="$(MODULES_FOLDER)"; \
-	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
-		modules="$(EXTRA_MODULES_FOLDER)"; \
-	fi; \
-	remote="origin"; \
-	if [[ "$(__TARGET_REMOTE)" != "" ]]; then \
-		remote="$(__TARGET_REMOTE)"; \
-	fi; \
-	cd "$$modules/$(__MODULE)"; \
-	delete="$(__TARGET_DELETE)"; \
-	if [[ "$$delete" != "" ]]; then \
-		$(GIT) push $$remote --delete "$$delete"; \
 		if [[ "$$?" -ne 0 ]]; then \
 			exit $$?; \
 		fi; \
