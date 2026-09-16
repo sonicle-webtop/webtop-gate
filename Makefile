@@ -1178,6 +1178,34 @@ __module-push:
 	}
 
 # Call me as sub-make
+.PHONY: __module-pushdelete
+__module-pushdelete:
+	@{ \
+	set -e; \
+	if [[ "$(__MODULE)" == "" ]]; then \
+		echo -e "'__MODULE' is empty"; \
+		exit 255; \
+	fi; \
+	modules="$(MODULES_FOLDER)"; \
+	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
+		modules="$(EXTRA_MODULES_FOLDER)"; \
+	fi; \
+	remote="origin"; \
+	if [[ "$(__TARGET_REMOTE)" != "" ]]; then \
+		remote="$(__TARGET_REMOTE)"; \
+	fi; \
+	cd "$$modules/$(__MODULE)"; \
+	delete="$(__TARGET_DELETE)"; \
+	if [[ "$$delete" != "" ]]; then \
+		$(GIT) push $$remote --delete "$$delete"; \
+		if [[ "$$?" -ne 0 ]]; then \
+			exit $$?; \
+		fi; \
+	fi; \
+	cd ../..; \
+	}
+
+# Call me as sub-make
 .PHONY: __module-clone
 __module-clone:
 	@{ \
