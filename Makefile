@@ -49,10 +49,10 @@ cWHITE := \x1b[37m
 # DOCS:
 
 MVNTOOLS := \
-minify-maven-plugin \
-sonicle-superpom
+minify-maven-plugin
 
 COMPONENTS := \
+sonicle-superpom \
 sonicle-superpom-senchapkg \
 sonicle-commons \
 sonicle-commons-web \
