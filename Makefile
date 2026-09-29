@@ -192,18 +192,31 @@ endif
 ifeq ($(BUILD_TYPE),)
 	BUILD_TYPE := production
 endif
+# Effective names of GIT branches
+ifeq ($(BRANCH_MASTER_NAME),)
+	BRANCH_MASTER_NAME := "master"
+endif
+ifeq ($(BRANCH_RELEASE_NAME),)
+	BRANCH_RELEASE_NAME := "release"
+endif
+ifeq ($(BRANCH_DEVELOP_NAME),)
+	BRANCH_DEVELOP_NAME := "develop"
+endif
+# Default branch types
 ifeq ($(DEFAULT_BASE_BRANCH),)
-	DEFAULT_BASE_BRANCH := master
+	DEFAULT_BASE_BRANCH := "/master/"
 endif
 ifeq ($(DEFAULT_BASE_BRANCH_EXTRA),)
-	DEFAULT_BASE_BRANCH_EXTRA := master
+	DEFAULT_BASE_BRANCH_EXTRA := "/master/"
 endif
+# Default clone URLs
 ifeq ($(DEFAULT_CLONE_BASEURL),)
 	DEFAULT_CLONE_BASEURL := https://github.com/sonicle-webtop
 endif
 ifeq ($(DEFAULT_MVNTOOLS_CLONE_BASEURL),)
 	DEFAULT_MVNTOOLS_CLONE_BASEURL := https://github.com/sonicle
 endif
+# Sencha version
 ifeq ($(DEFAULT_SENCHATOOLS_VERSION),)
 	DEFAULT_SENCHATOOLS_VERSION :=
 endif
@@ -477,7 +490,7 @@ checkout-develop: __check-modules-dir
 		fi; \
 		if [[ -f "$$modules/$$comp/.git/config" ]]; then \
 			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="develop" __DEFAULT_BRANCH="$$basebranch" __module-pull; \
+			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="/develop/" __DEFAULT_BRANCH="$$basebranch" __module-pull; \
 		fi; \
 	done; \
 	}
@@ -500,7 +513,7 @@ checkout-release: __check-modules-dir
 		fi; \
 		if [[ -f "$$modules/$$comp/.git/config" ]]; then \
 			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="release" __DEFAULT_BRANCH="$$basebranch" __module-pull; \
+			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="/release/" __DEFAULT_BRANCH="$$basebranch" __module-pull; \
 		fi; \
 	done; \
 	}
@@ -860,20 +873,20 @@ __module-merge:
 		modules="$(EXTRA_MODULES_FOLDER)"; \
 	fi; \
 	src_branch=""; \
-	if [[ "$(__SOURCE_BRANCH)" == "release" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
-		src_branch="release"; \
-	elif [[ "$(__SOURCE_BRANCH)" == "develop" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
-		src_branch="develop"; \
-	elif [[ "$(__SOURCE_BRANCH)" == "master" ]]; then \
-		src_branch="master"; \
+	if [[ "$(__SOURCE_BRANCH)" == "/release/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
+		src_branch="$(BRANCH_RELEASE_NAME)"; \
+	elif [[ "$(__SOURCE_BRANCH)" == "/develop/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
+		src_branch="$(BRANCH_DEVELOP_NAME)"; \
+	elif [[ "$(__SOURCE_BRANCH)" == "/master/" ]]; then \
+		src_branch="$(BRANCH_MASTER_NAME)"; \
 	fi; \
 	dst_branch=""; \
-	if [[ "$(__BASE_BRANCH)" == "release" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
-		dst_branch="release"; \
-	elif [[ "$(__BASE_BRANCH)" == "develop" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
-		dst_branch="develop"; \
-	elif [[ "$(__BASE_BRANCH)" == "master" ]]; then \
-		dst_branch="master"; \
+	if [[ "$(__BASE_BRANCH)" == "/release/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
+		dst_branch="$(BRANCH_RELEASE_NAME)"; \
+	elif [[ "$(__BASE_BRANCH)" == "/develop/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
+		dst_branch="$(BRANCH_DEVELOP_NAME)"; \
+	elif [[ "$(__BASE_BRANCH)" == "/master/" ]]; then \
+		dst_branch="$(BRANCH_MASTER_NAME)"; \
 	fi; \
 	if [[ src_branch != "" ]] && [[ dst_branch != "" ]]; then \
 		cd "$$modules/$(__MODULE)"; \
@@ -934,7 +947,7 @@ __module-git-exec:
 			echo -e "'__BRANCH_NAME' is empty"; \
 			exit 255; \
 		fi; \
-		if [[ "$(__BRANCH_NAME)" == "release" ]] || [[ "$(__BRANCH_NAME)" == "develop" ]] || [[ "$(__BRANCH_NAME)" == "master" ]]; then \
+		if [[ "$(__BRANCH_NAME)" == "$(BRANCH_RELEASE_NAME)" ]] || [[ "$(__BRANCH_NAME)" == "$(BRANCH_DEVELOP_NAME)" ]] || [[ "$(__BRANCH_NAME)" == "$(BRANCH_MASTER_NAME)" ]]; then \
 			echo -e "Branch cannot be deleted: reserved name"; \
 			exit 255; \
 		fi; \
@@ -998,10 +1011,10 @@ __module-git-exec:
 		fi; \
 		branch="$(__BRANCH_NAME)"; \
 		if [[ "$(__EVAL_FLAGS)" != "false" ]]; then \
-			if [[ "$(__BRANCH_NAME)" == "release" ]] && [[ "$($(__BRANCH_NAME))" == *"git-release"* ]]; then \
-				branch="release"; \
-			elif [[ "$(__TARGET_BRANCH)" == "develop" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
-				branch="develop"; \
+			if [[ "$(__TARGET_BRANCH)" == "/release/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
+				branch="$(BRANCH_RELEASE_NAME)"; \
+			elif [[ "$(__TARGET_BRANCH)" == "/develop/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
+				branch="$(BRANCH_DEVELOP_NAME)"; \
 			else \
 				branch="$(__DEFAULT_BRANCH)"; \
 			fi; \
@@ -1027,10 +1040,10 @@ __module-git-exec:
 	elif [[ "$(__ACTION)" == "pull" ]]; then \
 		branch="$(__BRANCH_NAME)"; \
 		if [[ "$(__EVAL_FLAGS)" != "false" ]]; then \
-			if [[ "$(__BRANCH_NAME)" == "release" ]] && [[ "$($(__BRANCH_NAME))" == *"git-release"* ]]; then \
-				branch="release"; \
-			elif [[ "$(__TARGET_BRANCH)" == "develop" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
-				branch="develop"; \
+			if [[ "$(__TARGET_BRANCH)" == "/release/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
+				branch="$(BRANCH_RELEASE_NAME)"; \
+			elif [[ "$(__TARGET_BRANCH)" == "/develop/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
+				branch="$(BRANCH_DEVELOP_NAME)"; \
 			else \
 				branch="$(__DEFAULT_BRANCH)"; \
 			fi; \
@@ -1122,12 +1135,12 @@ __module-pull:
 		modules="$(EXTRA_MODULES_FOLDER)"; \
 	fi; \
 	branch=""; \
-	if [[ "$(__TARGET_BRANCH)" == "release" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
-		branch="release"; \
-	elif [[ "$(__TARGET_BRANCH)" == "develop" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
-		branch="develop"; \
-	elif [[ "$(__TARGET_BRANCH)" == "master" ]]; then \
-		branch="master"; \
+	if [[ "$(__TARGET_BRANCH)" == "/release/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
+		branch="$(BRANCH_RELEASE_NAME)"; \
+	elif [[ "$(__TARGET_BRANCH)" == "/develop/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
+		branch="$(BRANCH_DEVELOP_NAME)"; \
+	elif [[ "$(__TARGET_BRANCH)" == "/master/" ]]; then \
+		branch="$(BRANCH_MASTER_NAME)"; \
 	else \
 		branch="$(__DEFAULT_BRANCH)"; \
 	fi; \
@@ -1165,12 +1178,12 @@ __module-push:
 		remote="$(__TARGET_REMOTE)"; \
 	fi; \
 	branch=""; \
-	if [[ "$(__TARGET_BRANCH)" == "release" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
-		branch="release"; \
-	elif [[ "$(__TARGET_BRANCH)" == "develop" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
-		branch="develop"; \
-	elif [[ "$(__TARGET_BRANCH)" == "master" ]]; then \
-		branch="master"; \
+	if [[ "$(__TARGET_BRANCH)" == "/release/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
+		branch="$(BRANCH_RELEASE_NAME)"; \
+	elif [[ "$(__TARGET_BRANCH)" == "/develop/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
+		branch="$(BRANCH_DEVELOP_NAME)"; \
+	elif [[ "$(__TARGET_BRANCH)" == "/master/" ]]; then \
+		branch="$(BRANCH_MASTER_NAME)"; \
 	else \
 		branch="$(__DEFAULT_BRANCH)"; \
 	fi; \
@@ -1222,11 +1235,11 @@ __module-clone:
 	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
 		modules="$(EXTRA_MODULES_FOLDER)"; \
 	fi; \
-	branch="master"; \
-	if [[ "$(__TARGET_BRANCH)" == "release" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
-		branch="release"; \
-	elif [[ "$(__TARGET_BRANCH)" == "develop" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
-		branch="develop"; \
+	branch="$(BRANCH_MASTER_NAME)"; \
+	if [[ "$(__TARGET_BRANCH)" == "/release/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
+		branch="$(BRANCH_RELEASE_NAME)"; \
+	elif [[ "$(__TARGET_BRANCH)" == "/develop/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
+		branch="$(BRANCH_DEVELOP_NAME)"; \
 	fi; \
 	baseurl=$(DEFAULT_CLONE_BASEURL); \
 	if [[ "$(MVNTOOLS)" =~ (^| )$(__MODULE)($$| ) ]]; then \
