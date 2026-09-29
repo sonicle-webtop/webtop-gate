@@ -542,7 +542,7 @@ modules-status: __check-modules-dir
 
 .PHONY: modules-branch-create
 .HELP: modules-branch-create ## Creates a new tracked branch from the current one [NAME=new branch name]
-modules-branchcreate: __check-modules-dir
+modules-branch-create: __check-modules-dir
 	@{ \
 	set -e; \
 	if [[ "$(NAME)" == "" ]]; then \
@@ -558,7 +558,7 @@ modules-branchcreate: __check-modules-dir
 
 .PHONY: modules-branch-delete
 .HELP: modules-branch-delete ## Deletes a branch from the current one [NAME=branch name to delete]
-modules-branchdelete: __check-modules-dir
+modules-branch-delete: __check-modules-dir
 	@{ \
 	set -e; \
 	if [[ "$(NAME)" == "" ]]; then \
