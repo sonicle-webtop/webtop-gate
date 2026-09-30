@@ -541,7 +541,7 @@ modules-status: __check-modules-dir
 	}
 
 .PHONY: modules-branch-create
-.HELP: modules-branch-create ## Creates a new tracked branch from the current one [NAME=new branch name]
+.HELP: modules-branch-create ## Creates a new branch from the current one [NAME=new branch name]
 modules-branch-create: __check-modules-dir
 	@{ \
 	set -e; \
@@ -573,7 +573,7 @@ modules-branch-delete: __check-modules-dir
 	}
 
 .PHONY: modules-branch-push
-.HELP: modules-branch-push ## Pushes target branch of each local module to their 'origin' remote [NAME=branch to push]
+.HELP: modules-branch-push ## Pushes target branch of each local module to their 'origin' remote [NAME=branch to push, TRACK=1 to track remote branch]
 modules-branch-push: __check-modules-dir
 	@{ \
 	set -e; \
@@ -581,10 +581,14 @@ modules-branch-push: __check-modules-dir
 		echo -e "Parameter variable 'NAME' NOT defined"; \
 		exit 255; \
 	fi; \
+	track=""; \
+	if [[ "$(TRACK)" -eq 1 ]]; then \
+		track="true"; \
+	fi; \
 	branch_name="$(NAME)"; \
 	for comp in $(COMPONENTS) $(COMPONENTS_MORE) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
 		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-		$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __ACTION="push" __BRANCH_NAME="$$branch_name" __EVAL_FLAGS=false __module-git-exec; \
+		$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __ACTION="push" __BRANCH_NAME="$$branch_name" __EVAL_FLAGS=false __TRACK="$$track" __module-git-exec; \
 	done; \
 	}
 
@@ -938,7 +942,11 @@ __module-git-exec:
 			echo -e "'__BRANCH_NAME' is empty"; \
 			exit 255; \
 		fi; \
-		$(GIT) branch --track "$(__BRANCH_NAME)"; \
+		if [[ "$(__CHECKOUT)" == "true" ]]; then \
+			$(GIT) checkout -b "$(__BRANCH_NAME)"; \
+		else \
+			$(GIT) branch "$(__BRANCH_NAME)"; \
+		fi; \
 		if [[ "$$?" -ne 0 ]]; then \
 			exit $$?; \
 		fi; \
@@ -1020,18 +1028,22 @@ __module-git-exec:
 			fi; \
 		fi; \
 		if [[ "$$branch" != "" ]]; then \
+			pushopts=""; \
+			if [[ "$(__TRACK)" == "true" ]]; then \
+				pushopts="-u"; \
+			fi; \
 			tagsmode=""; \
-			if [[ "$(__TAGS_MODE)" == "" ]] && [[ "$(__PUSH_TAGS)" == "true" ]]; then \
+			if [[ "$(__PUSH_TAGS)" == "true" ]]; then \
 				tagsmode="PUSH"; \
 			else \
 				tagsmode="$(__TAGS_MODE)"; \
 			fi; \
 			if [[ "$$tagsmode" == "MIRROR" ]]; then \
-				$(GIT) checkout $$branch && $(GIT) push $$remote $$branch && $(GIT) push $$remote --prune "refs/tags/*:refs/tags/*"; \
+				$(GIT) checkout $$branch && $(GIT) push $$pushopts $$remote $$branch && $(GIT) push $$remote --prune "refs/tags/*:refs/tags/*"; \
 			elif [[ "$$tagsmode" == "PUSH" ]]; then \
-				$(GIT) checkout $$branch && $(GIT) push $$remote $$branch && $(GIT) push $$remote --tags -f; \
+				$(GIT) checkout $$branch && $(GIT) push $$pushopts $$remote $$branch && $(GIT) push $$remote --tags -f; \
 			else \
-				$(GIT) checkout $$branch && $(GIT) push $$remote $$branch; \
+				$(GIT) checkout $$branch && $(GIT) push $$pushopts $$remote $$branch; \
 			fi; \
 			if [[ "$$?" -ne 0 ]]; then \
 				exit $$?; \
