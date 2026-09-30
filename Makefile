@@ -573,7 +573,7 @@ modules-branch-delete: __check-modules-dir
 	}
 
 .PHONY: modules-branch-push
-.HELP: modules-branch-push ## Pushes target branch of each local module to their 'origin' remote [NAME=branch to push, TRACK=1 to track remote branch]
+.HELP: modules-branch-push ## Pushes target branch of each local module to their 'origin' remote [NAME=branch to push][TRACK=1, to track remote branch]
 modules-branch-push: __check-modules-dir
 	@{ \
 	set -e; \
@@ -1018,7 +1018,7 @@ __module-git-exec:
 			remote="$(__REMOTE_NAME)"; \
 		fi; \
 		branch="$(__BRANCH_NAME)"; \
-		if [[ "$(__EVAL_FLAGS)" != "false" ]]; then \
+		if [[ "$(__EVAL_FLAGS)" == "true" ]]; then \
 			if [[ "$(__TARGET_BRANCH)" == "/release/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
 				branch="$(BRANCH_RELEASE_NAME)"; \
 			elif [[ "$(__TARGET_BRANCH)" == "/develop/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
@@ -1030,7 +1030,7 @@ __module-git-exec:
 		if [[ "$$branch" != "" ]]; then \
 			pushopts=""; \
 			if [[ "$(__TRACK)" == "true" ]]; then \
-				pushopts="-u"; \
+				pushopts+="-u"; \
 			fi; \
 			tagsmode=""; \
 			if [[ "$(__PUSH_TAGS)" == "true" ]]; then \
@@ -1051,7 +1051,7 @@ __module-git-exec:
 		fi; \
 	elif [[ "$(__ACTION)" == "pull" ]]; then \
 		branch="$(__BRANCH_NAME)"; \
-		if [[ "$(__EVAL_FLAGS)" != "false" ]]; then \
+		if [[ "$(__EVAL_FLAGS)" == "true" ]]; then \
 			if [[ "$(__TARGET_BRANCH)" == "/release/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
 				branch="$(BRANCH_RELEASE_NAME)"; \
 			elif [[ "$(__TARGET_BRANCH)" == "/develop/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
@@ -1070,6 +1070,51 @@ __module-git-exec:
 				set +e; \
 				$(GIT) checkout tags/$$tag; \
 				set -e; \
+			fi; \
+		fi; \
+	elif [[ "$(__ACTION)" == "merge" ]]; then \
+		src_branch="$(__SOURCE_BRANCH_NAME)"; \
+		if [[ "$(__SOURCE_EVAL_FLAGS)" == "true" ]]; then \
+			if [[ "$(__SOURCE_BRANCH)" == "/release/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
+				src_branch="$(BRANCH_RELEASE_NAME)"; \
+			elif [[ "$(__SOURCE_BRANCH)" == "/develop/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
+				src_branch="$(BRANCH_DEVELOP_NAME)"; \
+			else \
+				src_branch="$(__DEFAULT_BRANCH)"; \
+			fi; \
+		fi; \
+		dst_branch="$(__TARGET_BRANCH_NAME)"; \
+		if [[ "$(__TARGET_EVAL_FLAGS)" == "true" ]]; then \
+			if [[ "$(__TARGET_BRANCH)" == "/release/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
+				dst_branch="$(BRANCH_RELEASE_NAME)"; \
+			elif [[ "$(__TARGET_BRANCH)" == "/develop/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
+				dst_branch="$(BRANCH_DEVELOP_NAME)"; \
+			else \
+				dst_branch="$(__DEFAULT_BRANCH)"; \
+			fi; \
+		fi; \
+		if [[ src_branch != "" ]] && [[ dst_branch != "" ]]; then \
+			mergeopts=""; \
+			if [[ "$(__NO_FF)" == "true" ]]; then \
+				mergeopts+=" --no-ff"; \
+			fi; \
+			if [[ "$(__SQUASH)" == "true" ]]; then \
+				mergeopts+=" --squash"; \
+			fi; \
+			if [[ "$(__IGNORE_WHITESPACE)" == "true" ]]; then \
+				mergeopts+=" -Xignore-space-change"; \
+			fi; \
+			$(GIT) checkout "$$src_branch" && $(GIT) pull; \
+			if [[ "$$?" -ne 0 ]]; then \
+				exit $$?; \
+			fi; \
+			$(GIT) checkout "$$dst_branch" && $(GIT) pull; \
+			if [[ "$$?" -ne 0 ]]; then \
+				exit $$?; \
+			fi; \
+			$(GIT) merge $$mergeopts "$$src_branch"; \
+			if [[ "$$?" -ne 0 ]]; then \
+				exit $$?; \
 			fi; \
 		fi; \
 	elif [[ "$(__ACTION)" == "commit" ]]; then \
