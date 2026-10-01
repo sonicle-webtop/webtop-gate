@@ -186,6 +186,33 @@ MOD_FLAGS.webtop-webapp					:= git-develop,git-release,build-development,build-p
 MOD_BUILDS_TGTFOLDER.webtop-webapp.default := $(TARGET_WARS_DIR)
 
 # ====================
+# BRANCH_NAMES.{branch_type}
+# Defines the effective name of the branch on GIT corresponding to our branch-types: MASTER, RELEASE, DEVELOP
+# Optionally names can be overridden using BRANCH_*_NAME vars.
+#
+BRANCH_NAMES.MASTER := master
+BRANCH_NAMES.RELEASE := release
+BRANCH_NAMES.DEVELOP := develop
+ifneq ($(BRANCH_MASTER_NAME),)
+	BRANCH_NAMES.MASTER := $(BRANCH_MASTER_NAME)
+endif
+ifneq ($(BRANCH_RELEASE_NAME),)
+	BRANCH_NAMES.RELEASE := $(BRANCH_RELEASE_NAME)
+endif
+ifneq ($(BRANCH_DEVELOP_NAME),)
+	BRANCH_NAMES.DEVELOP := $(BRANCH_DEVELOP_NAME)
+endif
+
+# ====================
+# Default branch-types per component origin (base or extra)
+ifeq ($(DEFAULT_BASE_BRANCH_TYPE),)
+	DEFAULT_BASE_BRANCH_TYPE := MASTER
+endif
+ifeq ($(DEFAULT_BASE_BRANCH_TYPE_EXTRA),)
+	DEFAULT_BASE_BRANCH_TYPE_EXTRA := MASTER
+endif
+
+# ====================
 # Git keeps asking me for my ssh key passphrase?
 # https://stackoverflow.com/questions/10032461/git-keeps-asking-me-for-my-ssh-key-passphrase
 # https://docs.github.com/en/authentication/connecting-to-github-with-ssh/working-with-ssh-key-passphrases#auto-launching-ssh-agent-on-git-for-windows
@@ -200,23 +227,7 @@ endif
 ifeq ($(BUILD_TYPE),)
 	BUILD_TYPE := production
 endif
-# Effective names of GIT branches
-ifeq ($(BRANCH_MASTER_NAME),)
-	BRANCH_MASTER_NAME := "master"
-endif
-ifeq ($(BRANCH_RELEASE_NAME),)
-	BRANCH_RELEASE_NAME := "release"
-endif
-ifeq ($(BRANCH_DEVELOP_NAME),)
-	BRANCH_DEVELOP_NAME := "develop"
-endif
-# Default branch types
-ifeq ($(DEFAULT_BASE_BRANCH),)
-	DEFAULT_BASE_BRANCH := "/master/"
-endif
-ifeq ($(DEFAULT_BASE_BRANCH_EXTRA),)
-	DEFAULT_BASE_BRANCH_EXTRA := "/master/"
-endif
+
 # Default clone URLs
 ifeq ($(DEFAULT_CLONE_BASEURL),)
 	DEFAULT_CLONE_BASEURL := https://github.com/sonicle-webtop
@@ -264,6 +275,16 @@ else
 endif
 
 # ====================
+
+define __branch-name-func
+branch_name() { \
+	case "$$1" in \
+		MASTER)  echo "$(BRANCH_NAMES.MASTER)" ;; \
+		RELEASE) echo "$(BRANCH_NAMES.RELEASE)" ;; \
+		DEVELOP) echo "$(BRANCH_NAMES.DEVELOP)" ;; \
+	esac; \
+};
+endef
 
 .DEFAULT_GOAL := help
 .DEFAULT: help
@@ -367,14 +388,14 @@ setup-modules: __setup-git __setup-folders
 	set -e; \
 	for comp in $(MVNTOOLS) $(COMPONENTS) $(COMPONENTS_MORE) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(DOCS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
 		modules="$(MODULES_FOLDER)"; \
-		basebranch="$(DEFAULT_BASE_BRANCH)"; \
+		basebranch_type="$(DEFAULT_BASE_BRANCH_TYPE)"; \
 		if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$$comp($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$$comp($$| ) ]]; then \
 			modules="$(EXTRA_MODULES_FOLDER)"; \
-			basebranch="$(DEFAULT_BASE_BRANCH_EXTRA)"; \
+			basebranch_type="$(DEFAULT_BASE_BRANCH_TYPE_EXTRA)"; \
 		fi; \
 		if [ ! -d "$$modules/$$comp" ]; then \
 			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-			$(SUB-MAKE) __MODULE="$$comp" __MODULE_BASEURL="MOD_CLONEBASEURL.$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="$$basebranch" __module-clone; \
+			$(SUB-MAKE) __MODULE="$$comp" __MODULE_BASEURL="MOD_CLONEBASEURL.$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH_TYPE="$$basebranch_type" __module-clone; \
 		fi; \
 	done; \
 	}
@@ -425,7 +446,8 @@ checkout-branch: __check-modules-dir
 		fi; \
 		if [[ -f "$$modules/$$comp/.git/config" ]]; then \
 			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="$(BRANCH)" __DEFAULT_BRANCH="$(BRANCH)" __module-pull; \
+			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __EVAL_FLAGS=false __BRANCH_NAME="$(BRANCH)" __ACTION="pull" __module-git-exec; \
+			#$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH_TYPE="$(BRANCH)" __DEFAULT_BRANCH_NAME="$(BRANCH)" __module-pull; \
 		fi; \
 	done; \
 	}
@@ -435,6 +457,7 @@ checkout-branch: __check-modules-dir
 checkout-tag: __check-modules-dir
 	@{ \
 	set -e; \
+	$(__branch-name-func) \
 	if [[ "$(TAG)" == "" ]]; then \
 		echo -e "Parameter variable 'TAG' NOT defined"; \
 		exit 255; \
@@ -445,15 +468,16 @@ checkout-tag: __check-modules-dir
 	fi; \
 	for comp in $$comps; do \
 		modules="$(MODULES_FOLDER)"; \
-		basebranch="$(DEFAULT_BASE_BRANCH)"; \
+		basebranch_type="$(DEFAULT_BASE_BRANCH_TYPE)"; \
 		if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$$comp($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$$comp($$| ) ]]; then \
 			modules="$(EXTRA_MODULES_FOLDER)"; \
-			basebranch="$(DEFAULT_BASE_BRANCH_EXTRA)"; \
+			basebranch_type="$(DEFAULT_BASE_BRANCH_TYPE_EXTRA)"; \
 		fi; \
 		if [[ -f "$$modules/$$comp/.git/config" ]]; then \
 			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-			#$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_TAG="$(TAG)" __DEFAULT_BRANCH="$$basebranch" __module-pull; \
-			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_TAG="$(TAG)" __DEFAULT_BRANCH="master" __module-pull; \
+			def_branch_name="$$(branch_name "$$basebranch_type")"; \
+			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __EVAL_FLAGS=true __TARGET_BRANCH_TYPE="MASTER" __DEFAULT_BRANCH_NAME="$$def_branch_name" __TAG_NAME="$(TAG)" __ACTION="pull" __module-git-exec; \
+			##$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_TAG_NAME="$(TAG)" __DEFAULT_BRANCH_NAME="$$def_branch_name" __module-pull; \
 		fi; \
 	done; \
 	}
@@ -463,20 +487,23 @@ checkout-tag: __check-modules-dir
 checkout-master: __check-modules-dir
 	@{ \
 	set -e; \
+	$(__branch-name-func) \
 	comps="$(COMPONENTS) $(COMPONENTS_MORE) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS)"; \
 	if [[ "$(EXTRA)" -eq 1 ]]; then \
 		comps="$(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA)"; \
 	fi; \
 	for comp in $$comps; do \
 		modules="$(MODULES_FOLDER)"; \
-		basebranch="$(DEFAULT_BASE_BRANCH)"; \
+		basebranch_type="$(DEFAULT_BASE_BRANCH_TYPE)"; \
 		if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$$comp($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$$comp($$| ) ]]; then \
 			modules="$(EXTRA_MODULES_FOLDER)"; \
-			basebranch="$(DEFAULT_BASE_BRANCH_EXTRA)"; \
+			basebranch_type="$(DEFAULT_BASE_BRANCH_TYPE_EXTRA)"; \
 		fi; \
 		if [[ -f "$$modules/$$comp/.git/config" ]]; then \
 			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="master" __DEFAULT_BRANCH="$$basebranch" __module-pull; \
+			def_branch_name="$$(branch_name "$$basebranch_type")"; \
+			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __EVAL_FLAGS=true __TARGET_BRANCH_TYPE="MASTER" __DEFAULT_BRANCH_NAME="$$def_branch_name" __ACTION="pull" __module-git-exec; \
+			#$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH_TYPE="MASTER" __DEFAULT_BRANCH_NAME="$$def_branch_name" __module-pull; \
 		fi; \
 	done; \
 	}
@@ -486,20 +513,23 @@ checkout-master: __check-modules-dir
 checkout-develop: __check-modules-dir
 	@{ \
 	set -e; \
+	$(__branch-name-func) \
 	comps="$(COMPONENTS) $(COMPONENTS_MORE) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS)"; \
 	if [[ "$(EXTRA)" -eq 1 ]]; then \
 		comps="$(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA)"; \
 	fi; \
 	for comp in $$comps; do \
 		modules="$(MODULES_FOLDER)"; \
-		basebranch="$(DEFAULT_BASE_BRANCH)"; \
+		basebranch_type="$(DEFAULT_BASE_BRANCH_TYPE)"; \
 		if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$$comp($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$$comp($$| ) ]]; then \
 			modules="$(EXTRA_MODULES_FOLDER)"; \
-			basebranch="$(DEFAULT_BASE_BRANCH_EXTRA)"; \
+			basebranch_type="$(DEFAULT_BASE_BRANCH_TYPE_EXTRA)"; \
 		fi; \
 		if [[ -f "$$modules/$$comp/.git/config" ]]; then \
 			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="/develop/" __DEFAULT_BRANCH="$$basebranch" __module-pull; \
+			def_branch_name="$$(branch_name "$$basebranch_type")"; \
+			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __EVAL_FLAGS=true __TARGET_BRANCH_TYPE="DEVELOP" __DEFAULT_BRANCH_NAME="$$def_branch_name" __ACTION="pull" __module-git-exec; \
+			#$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH_TYPE="DEVELOP" __DEFAULT_BRANCH_NAME="$$def_branch_name" __module-pull; \
 		fi; \
 	done; \
 	}
@@ -509,20 +539,23 @@ checkout-develop: __check-modules-dir
 checkout-release: __check-modules-dir
 	@{ \
 	set -e; \
+	$(__branch-name-func) \
 	comps="$(COMPONENTS) $(COMPONENTS_MORE) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS)"; \
 	if [[ "$(EXTRA)" -eq 1 ]]; then \
 		comps="$(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA)"; \
 	fi; \
 	for comp in $$comps; do \
 		modules="$(MODULES_FOLDER)"; \
-		basebranch="$(DEFAULT_BASE_BRANCH)"; \
+		basebranch_type="$(DEFAULT_BASE_BRANCH_TYPE)"; \
 		if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$$comp($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$$comp($$| ) ]]; then \
 			modules="$(EXTRA_MODULES_FOLDER)"; \
-			basebranch="$(DEFAULT_BASE_BRANCH_EXTRA)"; \
+			basebranch_type="$(DEFAULT_BASE_BRANCH_TYPE_EXTRA)"; \
 		fi; \
 		if [[ -f "$$modules/$$comp/.git/config" ]]; then \
 			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH="/release/" __DEFAULT_BRANCH="$$basebranch" __module-pull; \
+			def_branch_name="$$(branch_name "$$basebranch_type")"; \
+			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __EVAL_FLAGS=true __TARGET_BRANCH_TYPE="RELEASE" __DEFAULT_BRANCH_NAME="$$def_branch_name" __ACTION="pull" __module-git-exec; \
+			#$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_BRANCH_TYPE="RELEASE" __DEFAULT_BRANCH_NAME="$$def_branch_name" __module-pull; \
 		fi; \
 	done; \
 	}
@@ -561,7 +594,7 @@ modules-branch-create: __check-modules-dir
 	branch_name="$(NAME)"; \
 	for comp in $(COMPONENTS) $(COMPONENTS_MORE) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
 		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-		$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __ACTION="branch-create" __BRANCH_NAME="$$branch_name" __module-git-exec; \
+		$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __BRANCH_NAME="$$branch_name" __ACTION="branch-create" __module-git-exec; \
 	done; \
 	}
 
@@ -577,7 +610,7 @@ modules-branch-delete: __check-modules-dir
 	branch_name="$(NAME)"; \
 	for comp in $(COMPONENTS) $(COMPONENTS_MORE) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
 		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-		$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __ACTION="branch-delete" __BRANCH_NAME="$$branch_name" __module-git-exec; \
+		$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __BRANCH_NAME="$$branch_name" __ACTION="branch-delete" __module-git-exec; \
 	done; \
 	}
 
@@ -597,7 +630,7 @@ modules-branch-push: __check-modules-dir
 	branch_name="$(NAME)"; \
 	for comp in $(COMPONENTS) $(COMPONENTS_MORE) $(COMPONENTS_COM) $(SERVERS) $(WEBAPPS) $(COMPONENTS_EXTRA) $(WEBAPPS_EXTRA); do \
 		echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-		$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __ACTION="push" __BRANCH_NAME="$$branch_name" __EVAL_FLAGS=false __TRACK="$$track" __module-git-exec; \
+		$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __BRANCH_NAME="$$branch_name" __EVAL_FLAGS=false __TRACK="$$track" __ACTION="push" __module-git-exec; \
 	done; \
 	}
 
@@ -873,12 +906,12 @@ __module-merge:
 		echo -e "'__MODULE' is empty"; \
 		exit 255; \
 	fi; \
-	if [[ -z "$(__BASE_BRANCH)" ]]; then \
-		echo -e "Variable '__BASE_BRANCH' is not defined"; \
+	if [[ -z "$(__BASE_BRANCH_TYPE)" ]]; then \
+		echo -e "Variable '__BASE_BRANCH_TYPE' is not defined"; \
 		exit 255; \
 	fi; \
-	if [[ -z "$(__SOURCE_BRANCH)" ]]; then \
-		echo -e "Variable '__SOURCE_BRANCH' is not defined"; \
+	if [[ -z "$(__SOURCE_BRANCH_TYPE)" ]]; then \
+		echo -e "Variable '__SOURCE_BRANCH_TYPE' is not defined"; \
 		exit 255; \
 	fi; \
 	modules="$(MODULES_FOLDER)"; \
@@ -886,20 +919,20 @@ __module-merge:
 		modules="$(EXTRA_MODULES_FOLDER)"; \
 	fi; \
 	src_branch=""; \
-	if [[ "$(__SOURCE_BRANCH)" == "/release/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
-		src_branch="$(BRANCH_RELEASE_NAME)"; \
-	elif [[ "$(__SOURCE_BRANCH)" == "/develop/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
-		src_branch="$(BRANCH_DEVELOP_NAME)"; \
-	elif [[ "$(__SOURCE_BRANCH)" == "/master/" ]]; then \
-		src_branch="$(BRANCH_MASTER_NAME)"; \
+	if [[ "$(__SOURCE_BRANCH_TYPE)" == "RELEASE" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
+		src_branch="$(BRANCH_NAMES.RELEASE)"; \
+	elif [[ "$(__SOURCE_BRANCH_TYPE)" == "DEVELOP" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
+		src_branch="$(BRANCH_NAMES.DEVELOP)"; \
+	elif [[ "$(__SOURCE_BRANCH_TYPE)" == "MASTER" ]]; then \
+		src_branch="$(BRANCH_NAMES.MASTER)"; \
 	fi; \
 	dst_branch=""; \
-	if [[ "$(__BASE_BRANCH)" == "/release/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
-		dst_branch="$(BRANCH_RELEASE_NAME)"; \
-	elif [[ "$(__BASE_BRANCH)" == "/develop/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
-		dst_branch="$(BRANCH_DEVELOP_NAME)"; \
-	elif [[ "$(__BASE_BRANCH)" == "/master/" ]]; then \
-		dst_branch="$(BRANCH_MASTER_NAME)"; \
+	if [[ "$(__BASE_BRANCH_TYPE)" == "RELEASE" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
+		dst_branch="$(BRANCH_NAMES.RELEASE)"; \
+	elif [[ "$(__BASE_BRANCH_TYPE)" == "DEVELOP" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
+		dst_branch="$(BRANCH_NAMES.DEVELOP)"; \
+	elif [[ "$(__BASE_BRANCH_TYPE)" == "MASTER" ]]; then \
+		dst_branch="$(BRANCH_NAMES.MASTER)"; \
 	fi; \
 	if [[ src_branch != "" ]] && [[ dst_branch != "" ]]; then \
 		cd "$$modules/$(__MODULE)"; \
@@ -964,7 +997,7 @@ __module-git-exec:
 			echo -e "'__BRANCH_NAME' is empty"; \
 			exit 255; \
 		fi; \
-		if [[ "$(__BRANCH_NAME)" == "$(BRANCH_RELEASE_NAME)" ]] || [[ "$(__BRANCH_NAME)" == "$(BRANCH_DEVELOP_NAME)" ]] || [[ "$(__BRANCH_NAME)" == "$(BRANCH_MASTER_NAME)" ]]; then \
+		if [[ "$(__BRANCH_NAME)" == "$(BRANCH_NAMES.RELEASE)" ]] || [[ "$(__BRANCH_NAME)" == "$(BRANCH_NAMES.DEVELOP)" ]] || [[ "$(__BRANCH_NAME)" == "$(BRANCH_NAMES.MASTER)" ]]; then \
 			echo -e "Branch cannot be deleted: reserved name"; \
 			exit 255; \
 		fi; \
@@ -1018,22 +1051,18 @@ __module-git-exec:
 			exit $$?; \
 		fi; \
 	elif [[ "$(__ACTION)" == "push" ]]; then \
-		if [[ "$(__BRANCH_NAME)" == "" ]]; then \
-			echo -e "'__BRANCH_NAME' is empty"; \
-			exit 255; \
-		fi; \
 		remote="origin"; \
 		if [[ "$(__REMOTE_NAME)" != "" ]]; then \
 			remote="$(__REMOTE_NAME)"; \
 		fi; \
 		branch="$(__BRANCH_NAME)"; \
 		if [[ "$(__EVAL_FLAGS)" == "true" ]]; then \
-			if [[ "$(__TARGET_BRANCH)" == "/release/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
-				branch="$(BRANCH_RELEASE_NAME)"; \
-			elif [[ "$(__TARGET_BRANCH)" == "/develop/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
-				branch="$(BRANCH_DEVELOP_NAME)"; \
+			if [[ "$(__TARGET_BRANCH_TYPE)" == "RELEASE" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
+				branch="$(BRANCH_NAMES.RELEASE)"; \
+			elif [[ "$(__TARGET_BRANCH_TYPE)" == "DEVELOP" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
+				branch="$(BRANCH_NAMES.DEVELOP)"; \
 			else \
-				branch="$(__DEFAULT_BRANCH)"; \
+				branch="$(__DEFAULT_BRANCH_NAME)"; \
 			fi; \
 		fi; \
 		if [[ "$$branch" != "" ]]; then \
@@ -1061,12 +1090,12 @@ __module-git-exec:
 	elif [[ "$(__ACTION)" == "pull" ]]; then \
 		branch="$(__BRANCH_NAME)"; \
 		if [[ "$(__EVAL_FLAGS)" == "true" ]]; then \
-			if [[ "$(__TARGET_BRANCH)" == "/release/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
-				branch="$(BRANCH_RELEASE_NAME)"; \
-			elif [[ "$(__TARGET_BRANCH)" == "/develop/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
-				branch="$(BRANCH_DEVELOP_NAME)"; \
+			if [[ "$(__TARGET_BRANCH_TYPE)" == "RELEASE" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
+				branch="$(BRANCH_NAMES.RELEASE)"; \
+			elif [[ "$(__TARGET_BRANCH_TYPE)" == "DEVELOP" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
+				branch="$(BRANCH_NAMES.DEVELOP)"; \
 			else \
-				branch="$(__DEFAULT_BRANCH)"; \
+				branch="$(__DEFAULT_BRANCH_NAME)"; \
 			fi; \
 		fi; \
 		tag="$(__TAG_NAME)"; \
@@ -1084,22 +1113,22 @@ __module-git-exec:
 	elif [[ "$(__ACTION)" == "merge" ]]; then \
 		src_branch="$(__SOURCE_BRANCH_NAME)"; \
 		if [[ "$(__SOURCE_EVAL_FLAGS)" == "true" ]]; then \
-			if [[ "$(__SOURCE_BRANCH)" == "/release/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
-				src_branch="$(BRANCH_RELEASE_NAME)"; \
-			elif [[ "$(__SOURCE_BRANCH)" == "/develop/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
-				src_branch="$(BRANCH_DEVELOP_NAME)"; \
+			if [[ "$(__SOURCE_BRANCH_TYPE)" == "RELEASE" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
+				src_branch="$(BRANCH_NAMES.RELEASE)"; \
+			elif [[ "$(__SOURCE_BRANCH_TYPE)" == "DEVELOP" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
+				src_branch="$(BRANCH_NAMES.DEVELOP)"; \
 			else \
-				src_branch="$(__DEFAULT_BRANCH)"; \
+				src_branch="$(__DEFAULT_BRANCH_NAME)"; \
 			fi; \
 		fi; \
 		dst_branch="$(__TARGET_BRANCH_NAME)"; \
 		if [[ "$(__TARGET_EVAL_FLAGS)" == "true" ]]; then \
-			if [[ "$(__TARGET_BRANCH)" == "/release/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
-				dst_branch="$(BRANCH_RELEASE_NAME)"; \
-			elif [[ "$(__TARGET_BRANCH)" == "/develop/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
-				dst_branch="$(BRANCH_DEVELOP_NAME)"; \
+			if [[ "$(__TARGET_BRANCH_TYPE)" == "RELEASE" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
+				dst_branch="$(BRANCH_NAMES.RELEASE)"; \
+			elif [[ "$(__TARGET_BRANCH_TYPE)" == "DEVELOP" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
+				dst_branch="$(BRANCH_NAMES.DEVELOP)"; \
 			else \
-				dst_branch="$(__DEFAULT_BRANCH)"; \
+				dst_branch="$(__DEFAULT_BRANCH_NAME)"; \
 			fi; \
 		fi; \
 		if [[ src_branch != "" ]] && [[ dst_branch != "" ]]; then \
@@ -1127,6 +1156,29 @@ __module-git-exec:
 			fi; \
 		fi; \
 	elif [[ "$(__ACTION)" == "commit" ]]; then \
+		if [[ "$(__COMMIT_MESSAGE)" == "" ]] && [[ "$(__COMMIT_FILE)" == "" ]]; then \
+			echo -e "'__COMMIT_MESSAGE/__COMMIT_FILE' is empty"; \
+			exit 255; \
+		fi; \
+		if [[ "$(__COMMIT_MESSAGE)" != "" ]]; then \
+			echo "GIT commit -m $(__COMMIT_MESSAGE)"; \
+			$(GIT) commit -m "$(__COMMIT_MESSAGE)"; \
+			if [[ "$$?" -ne 0 ]]; then \
+				exit $$?; \
+			fi; \
+		elif [[ "$(__COMMIT_FILE)" != "" ]]; then \
+			if [[ -f "$(__COMMIT_FILE)" ]]; then \
+				echo "GIT commit -F $(__COMMIT_FILE)"; \
+				$(GIT) commit -F "$(__COMMIT_FILE)"; \
+				if [[ "$$?" -ne 0 ]]; then \
+					exit $$?; \
+				fi; \
+			else \
+				echo -e "Specified commit FILE '$(__COMMIT_FILE)' not found"; \
+				exit 255; \
+			fi; \
+		fi; \
+	elif [[ "$(__ACTION)" == "stage-commit" ]]; then \
 		if [[ "$(__COMMIT_MESSAGE)" == "" ]]; then \
 			echo -e "'__COMMIT_MESSAGE' is empty"; \
 			exit 255; \
@@ -1201,16 +1253,16 @@ __module-pull:
 		modules="$(EXTRA_MODULES_FOLDER)"; \
 	fi; \
 	branch=""; \
-	if [[ "$(__TARGET_BRANCH)" == "/release/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
-		branch="$(BRANCH_RELEASE_NAME)"; \
-	elif [[ "$(__TARGET_BRANCH)" == "/develop/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
-		branch="$(BRANCH_DEVELOP_NAME)"; \
-	elif [[ "$(__TARGET_BRANCH)" == "/master/" ]]; then \
-		branch="$(BRANCH_MASTER_NAME)"; \
+	if [[ "$(__TARGET_BRANCH_TYPE)" == "RELEASE" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
+		branch="$(BRANCH_NAMES.RELEASE)"; \
+	elif [[ "$(__TARGET_BRANCH_TYPE)" == "DEVELOP" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
+		branch="$(BRANCH_NAMES.DEVELOP)"; \
+	elif [[ "$(__TARGET_BRANCH_TYPE)" == "MASTER" ]]; then \
+		branch="$(BRANCH_NAMES.MASTER)"; \
 	else \
-		branch="$(__DEFAULT_BRANCH)"; \
+		branch="$(__DEFAULT_BRANCH_NAME)"; \
 	fi; \
-	tag="$(__TARGET_TAG)"; \
+	tag="$(__TARGET_TAG_NAME)"; \
 	if [[ "$$branch" != "" ]]; then \
 		cd "$$modules/$(__MODULE)"; \
 		$(GIT) checkout $$branch && $(GIT) pull; \
@@ -1244,14 +1296,14 @@ __module-push:
 		remote="$(__TARGET_REMOTE)"; \
 	fi; \
 	branch=""; \
-	if [[ "$(__TARGET_BRANCH)" == "/release/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
-		branch="$(BRANCH_RELEASE_NAME)"; \
-	elif [[ "$(__TARGET_BRANCH)" == "/develop/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
-		branch="$(BRANCH_DEVELOP_NAME)"; \
-	elif [[ "$(__TARGET_BRANCH)" == "/master/" ]]; then \
-		branch="$(BRANCH_MASTER_NAME)"; \
+	if [[ "$(__TARGET_BRANCH_TYPE)" == "RELEASE" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
+		branch="$(BRANCH_NAMES.RELEASE)"; \
+	elif [[ "$(__TARGET_BRANCH_TYPE)" == "DEVELOP" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
+		branch="$(BRANCH_NAMES.DEVELOP)"; \
+	elif [[ "$(__TARGET_BRANCH_TYPE)" == "MASTER" ]]; then \
+		branch="$(BRANCH_NAMES.MASTER)"; \
 	else \
-		branch="$(__DEFAULT_BRANCH)"; \
+		branch="$(__DEFAULT_BRANCH_NAME)"; \
 	fi; \
 	cd "$$modules/$(__MODULE)"; \
 	if [[ "$$branch" != "" ]]; then \
@@ -1278,7 +1330,7 @@ __module-push:
 			fi; \
 		fi; \
 	fi; \
-	tag="$(__TARGET_TAG)"; \
+	tag="$(__TARGET_TAG_NAME)"; \
 	if [[ "$$tag" != "" ]]; then \
 		$(GIT) push $$remote tag $$tag; \
 		if [[ "$$?" -ne 0 ]]; then \
@@ -1301,11 +1353,11 @@ __module-clone:
 	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
 		modules="$(EXTRA_MODULES_FOLDER)"; \
 	fi; \
-	branch="$(BRANCH_MASTER_NAME)"; \
-	if [[ "$(__TARGET_BRANCH)" == "/release/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
-		branch="$(BRANCH_RELEASE_NAME)"; \
-	elif [[ "$(__TARGET_BRANCH)" == "/develop/" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
-		branch="$(BRANCH_DEVELOP_NAME)"; \
+	branch="$(BRANCH_NAMES.MASTER)"; \
+	if [[ "$(__TARGET_BRANCH_TYPE)" == "RELEASE" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-release"* ]]; then \
+		branch="$(BRANCH_NAMES.RELEASE)"; \
+	elif [[ "$(__TARGET_BRANCH_TYPE)" == "DEVELOP" ]] && [[ "$($(__MODULE_FLAGS))" == *"git-develop"* ]]; then \
+		branch="$(BRANCH_NAMES.DEVELOP)"; \
 	fi; \
 	baseurl=$(DEFAULT_CLONE_BASEURL); \
 	if [[ "$(MVNTOOLS)" =~ (^| )$(__MODULE)($$| ) ]]; then \
@@ -1628,32 +1680,6 @@ __module-commit-deprecated:
 	$(GIT) add --all && $(GIT) commit -m "$(__COMMIT_MESSAGE)"; \
 	if [[ "$$?" -ne 0 ]]; then \
 		exit $$?; \
-	fi; \
-	cd ../..; \
-	}
-
-# Call me as sub-make (DEPRECATED use __module-git-exec@branch-enforce)
-.PHONY: __module-checkonbranch-deprecated
-__module-checkonbranch-deprecated:
-	@{ \
-	set -e; \
-	if [[ "$(__MODULE)" == "" ]]; then \
-		echo -e "'__MODULE' is empty"; \
-		exit 255; \
-	fi; \
-	if [[ "$(__TARGET_BRANCH)" == "" ]]; then \
-		echo -e "'__TARGET_BRANCH' is empty"; \
-		exit 255; \
-	fi; \
-	modules="$(MODULES_FOLDER)"; \
-	if [[ "$(COMPONENTS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]] || [[ "$(WEBAPPS_EXTRA)" =~ (^| )$(__MODULE)($$| ) ]]; then \
-		modules="$(EXTRA_MODULES_FOLDER)"; \
-	fi; \
-	cd "$$modules/$(__MODULE)"; \
-	branch=`$(GIT) rev-parse --abbrev-ref HEAD`; \
-	if [ "$$branch" != "$(__TARGET_BRANCH)" ]; then \
-		echo -e "Current branch MUST be '$(__TARGET_BRANCH)'"; \
-		exit 1; \
 	fi; \
 	cd ../..; \
 	}
