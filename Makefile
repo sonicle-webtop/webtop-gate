@@ -452,7 +452,8 @@ checkout-tag: __check-modules-dir
 		fi; \
 		if [[ -f "$$modules/$$comp/.git/config" ]]; then \
 			echo -e "$(cCYAN)[$$comp]$(cRESET)"; \
-			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_TAG="$(TAG)" __DEFAULT_BRANCH="$$basebranch" __module-pull; \
+			#$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_TAG="$(TAG)" __DEFAULT_BRANCH="$$basebranch" __module-pull; \
+			$(SUB-MAKE) __MODULE="$$comp" __MODULE_FLAGS="MOD_FLAGS.$$comp" __TARGET_TAG="$(TAG)" __DEFAULT_BRANCH="master" __module-pull; \
 		fi; \
 	done; \
 	}
