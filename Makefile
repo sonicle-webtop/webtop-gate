@@ -110,6 +110,14 @@ com.sonicle.webtop
 # Every module relies on the following hidden defaults: DEFAULT_CLONE_BASEURL and DEFAULT_MVNTOOLS_CLONE_BASEURL
 
 # ====================
+# MOD_CLONEBASEURL.{module_name}
+# Defines the clone URL by module: it allows to override the default URL for cloning
+
+# Example:
+#  MOD_CLONEBASEURL.mymodule := https://github.com/myorg
+MOD_CLONEBASEURL.sonicle-superpom := https://github.com/sonicle
+
+# ====================
 # Defines modules flags, characterizing each module in a different manner.
 # Avaiable flags are:
 #  - git-develop : module has the "develop" branch
