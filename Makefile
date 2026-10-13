@@ -239,6 +239,7 @@ endif
 ifeq ($(DEFAULT_SENCHATOOLS_VERSION),)
 	DEFAULT_SENCHATOOLS_VERSION :=
 endif
+SENCHA_LIBEXTRA_FOLDERNAME := sencha-lib-extra
 
 # ====================
 # Variables targetting binaries
@@ -267,6 +268,15 @@ endif
 ifeq ($(MVN_USERHOME),)
 	MVN_USERHOME := `$(MVN) $(MVN_ARGS) help:evaluate -Dexpression=user.home -q -DforceStdout`
 endif
+ifeq ($(MVN_DEP_PLUGIN),)
+	MVN_DEP_PLUGIN := org.apache.maven.plugins:maven-dependency-plugin:3.8.1
+endif
+# Standalone Nashorn (removed from the JDK in 15) and the ASM modules it requires:
+# Sencha Cmd 7.5 needs a javascript engine for its Ant scripts when it runs on a JDK 15+.
+NASHORN_ARTIFACTS = org.openjdk.nashorn:nashorn-core:15.4 \
+org.ow2.asm:asm:7.3.1 org.ow2.asm:asm-commons:7.3.1 \
+org.ow2.asm:asm-tree:7.3.1 org.ow2.asm:asm-util:7.3.1 \
+org.ow2.asm:asm-analysis:7.3.1
 
 ifeq ($(OS),Windows_NT)
 	detected_OS := Windows
@@ -1459,6 +1469,12 @@ __extract-senchatools:
 			exit $$?; \
 		fi; \
 		echo -e "SenchaTools successfully extracted to '$$toolsfolder' folder."; \
+		libextrafolder="$$toolsfolder/$(SENCHA_LIBEXTRA_FOLDERNAME)"; \
+		mkdir -p "$$libextrafolder"; \
+		echo -e "[workspace] Extracting Nashorn libs in $$libextrafolder..."; \
+		for artifact in $(NASHORN_ARTIFACTS); do \
+			$(MVN) -B -q $(MVN_DEP_PLUGIN):copy -Dartifact=$$artifact -DoutputDirectory="$$libextrafolder" || exit 1; \
+		done; \
 		mvn_m2="$(MVN_USERHOME)/.m2"; \
 		echo -e "Maven .m2 located at: '$$mvn_m2'"; \
 		mkdir -p "$$mvn_m2"; \
@@ -1470,12 +1486,14 @@ __extract-senchatools:
 		fi; \
 		if [[ ! -f "$$propfile" ]]; then \
 			echo "sencha.cmd=$$toolsfolder_real/cmd" > "$$propfile"; \
+			echo "sencha.cmd.vm.params=--module-path $$toolsfolder_real/$(SENCHA_LIBEXTRA_FOLDERNAME) --add-modules org.openjdk.nashorn" >> "$$propfile"; \
 			echo "sencha.workspace=$$toolsfolder_real/workspace" >> "$$propfile"; \
 			echo -e "Properties 'sencha.cmd' and 'sencha.workspace' written to '$$propfile' file."; \
 		else \
 			echo -e "File '$$propfile' already exists."; \
 			echo -e "You can use the following properties for configure your '.properties' file:"; \
 			echo -e "$(cGREEN)sencha.cmd=$$toolsfolder_real/cmd$(cRESET)"; \
+			echo -e "$(cGREEN)sencha.cmd.vm.params=--module-path $$toolsfolder_real/$(SENCHA_LIBEXTRA_FOLDERNAME) --add-modules org.openjdk.nashorn$(cRESET)"; \
 			#echo -e "$(cGREEN)sencha.cmd=$$toolsfolder_real/cmd/$$cmdversion$(cRESET)"; \
 			echo -e "$(cGREEN)sencha.workspace=$$toolsfolder_real/workspace$(cRESET)"; \
 		fi; \
