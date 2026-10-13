@@ -1471,10 +1471,11 @@ __extract-senchatools:
 		echo -e "SenchaTools successfully extracted to '$$toolsfolder' folder."; \
 		libextrafolder="$$toolsfolder/$(SENCHA_LIBEXTRA_FOLDERNAME)"; \
 		mkdir -p "$$libextrafolder"; \
-		echo -e "[workspace] Extracting Nashorn libs in $$libextrafolder..."; \
+		echo -e "[cmd] Extracting Nashorn libs in $$libextrafolder..."; \
 		for artifact in $(NASHORN_ARTIFACTS); do \
 			$(MVN) -B -q $(MVN_DEP_PLUGIN):copy -Dartifact=$$artifact -DoutputDirectory="$$libextrafolder" || exit 1; \
 		done; \
+		echo -e "[cmd] Nashorn libs copied to '$$libextrafolder' folder."; \
 		mvn_m2="$(MVN_USERHOME)/.m2"; \
 		echo -e "Maven .m2 located at: '$$mvn_m2'"; \
 		mkdir -p "$$mvn_m2"; \
