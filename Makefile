@@ -16,6 +16,8 @@ TARGET_WARS_DIR := $(WORKSPACE_DIR)/target-wars
 TARGET_SERVERS_DIR := $(WORKSPACE_DIR)/target-servers
 FILES_DIRNAME := files
 FILES_DIR := $(WORKSPACE_DIR)/files
+BUILD_LOGS_DIR := $(WORKSPACE_DIR)/build-logs
+BUILD_LOG_TIMESTAMP := $(shell date +%Y%m%d-%H%M%S)
 
 ifeq ($(shell type -p cygpath || echo ""),)
 	IS_CYGWIN := 0
@@ -658,6 +660,17 @@ modules-upstreamdiff: __check-modules-dir
 .PHONY: build
 .HELP: build ## Build components, webapps and servers modules
 build: tools-build components-build webapps-build servers-build
+
+.PHONY: build-with-log
+.HELP: build-with-log ## Like build but save console output to a timestamped log file
+build-with-log:
+	@{ \
+	set -o pipefail; \
+	mkdir -p "$(BUILD_LOGS_DIR)"; \
+	logfile="$(BUILD_LOGS_DIR)/build-$(BUILD_LOG_TIMESTAMP).log"; \
+	echo "Build log: $$logfile"; \
+	$(SUB-MAKE) build 2>&1 | tee "$$logfile"; \
+	}
 
 .PHONY: tools-build
 .HELP: tools-build ## Build tools modules only
