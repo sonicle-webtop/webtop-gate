@@ -1487,14 +1487,14 @@ __extract-senchatools:
 		fi; \
 		if [[ ! -f "$$propfile" ]]; then \
 			echo "sencha.cmd=$$toolsfolder_real/cmd" > "$$propfile"; \
-			echo "sencha.cmd.vm.params=--module-path $$toolsfolder_real/$(SENCHA_LIBEXTRA_FOLDERNAME) --add-modules org.openjdk.nashorn" >> "$$propfile"; \
+			echo "sencha.cmd.vm.params=--module-path $$toolsfolder_real/$(SENCHA_LIBEXTRA_FOLDERNAME) --add-modules org.openjdk.nashorn --add-opens java.base/java.lang=ALL-UNNAMED" >> "$$propfile"; \
 			echo "sencha.workspace=$$toolsfolder_real/workspace" >> "$$propfile"; \
 			echo -e "Properties 'sencha.cmd' and 'sencha.workspace' written to '$$propfile' file."; \
 		else \
 			echo -e "File '$$propfile' already exists."; \
 			echo -e "You can use the following properties for configure your '.properties' file:"; \
 			echo -e "$(cGREEN)sencha.cmd=$$toolsfolder_real/cmd$(cRESET)"; \
-			echo -e "$(cGREEN)sencha.cmd.vm.params=--module-path $$toolsfolder_real/$(SENCHA_LIBEXTRA_FOLDERNAME) --add-modules org.openjdk.nashorn$(cRESET)"; \
+			echo -e "$(cGREEN)sencha.cmd.vm.params=--module-path $$toolsfolder_real/$(SENCHA_LIBEXTRA_FOLDERNAME) --add-modules org.openjdk.nashorn --add-opens java.base/java.lang=ALL-UNNAMED$(cRESET)"; \
 			#echo -e "$(cGREEN)sencha.cmd=$$toolsfolder_real/cmd/$$cmdversion$(cRESET)"; \
 			echo -e "$(cGREEN)sencha.workspace=$$toolsfolder_real/workspace$(cRESET)"; \
 		fi; \
